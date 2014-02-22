@@ -7,4 +7,5 @@ Created on 20.02.2014
 if __name__ == '__main__':
     pass
 
-print "Hello, world!"
+print("Hello, world!")
+print("The Fabiator was here!")
