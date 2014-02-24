@@ -14,9 +14,11 @@ from matplotlib import rc
 def main():
 
     # Get screen resolution (Only works with Windows OS)
-    screen = ctypes.windll.user32
-    width = screen.GetSystemMetrics(0)
-    height = screen.GetSystemMetrics(1)
+#     screen = ctypes.windll.user32
+#     height = screen.GetSystemMetrics(1)
+#     width = screen.GetSystemMetrics(0)
+    height = 500
+    width = 500
     
     # Enable Latex functionality and fonts
     rc('text',usetex=True)
@@ -43,23 +45,23 @@ def main():
     dpi = 80
     pylab.figure(num=1, figsize=(width/dpi*0.8, height/dpi*0.8), dpi=dpi, facecolor=frontcolor, edgecolor='k') 
     
-    
+     
     # Plot graphs
     plotcolor = pylab.array([0.5,0.5,1])        # Represents bright blue
     pylab.subplot(2,2,1)
     pylab.title('Noisy sinusoid with $\sigma^2=0$')
-    plot1 = pylab.plot(t,samples,color=plotcolor)
-    
+    pylab.plot(t,samples,color=plotcolor)
+#     
     pylab.subplot(2,2,2)
     pylab.title('Noisy sinusoid with $\sigma^2=1/16$')
     plot2 = pylab.plot(t,samples+noise/4,color=plotcolor)
     pylab.plot(t,samples,color='k')
-    
+     
     pylab.subplot(2,2,3)
     pylab.title('Noisy sinusoid with $\sigma^2=1/4$')
     plot3 = pylab.plot(t,samples+noise/2,color=plotcolor)
     pylab.plot(t,samples,color='k')
-    
+     
     pylab.subplot(2,2,4)
     pylab.title('Noisy sinusoid with $\sigma^2=1$')
     plot4 = pylab.plot(t,samples+noise,color=plotcolor)
