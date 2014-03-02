@@ -1,12 +1,15 @@
 '''
 Created on 28.02.2014
 
-@author: Fabio Marti
+@authors: Daniel Gilgen, Fabio Marti
 '''
 
 import numpy as np
 
 
+"""
+Error Class. Used to raise errors.
+"""
 class Error(Exception):
     pass
 

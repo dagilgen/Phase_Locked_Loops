@@ -1,7 +1,7 @@
 '''
 Created on 26.02.2014
 
-@author: Fabio Marti
+@author: Daniel Gilgen, Fabio Marti
 '''
 
 import numpy as np

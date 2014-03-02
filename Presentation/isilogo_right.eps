@@ -1,0 +1,65 @@
+%!PS-Adobe-2.0 EPSF-2.0
+%%BoundingBox: 0 0 109 30
+%%Title: The ISI Logo Aug-2007
+%%EndComments
+
+/cc {0.26 0.77 0.58 setrgbcolor} def
+
+/reencsmalldict 4 dict def
+/ReEncodeSmall
+  { reencsmalldict begin /newcodesandnames exch def
+    /newfontname exch def /basefontname exch def
+    /basefontdict basefontname findfont def
+    /newfont basefontdict maxlength dict def
+    basefontdict {exch dup /FID ne {dup /Encoding eq
+      {exch dup length array copy newfont 3 1 roll put}
+      {exch newfont 3 1 roll put} ifelse} {pop pop} ifelse
+    } forall
+    newfont /FontName newfontname put
+    newcodesandnames aload pop newcodesandnames length 2 idiv
+    {newfont /Encoding get 3 1 roll put} repeat
+    newfontname newfont definefont pop end
+  } def
+/umlaute [129 /udieresis 130 /eacute 132 /adieresis 148 /odieresis] def
+/Helvetica /Schrift umlaute ReEncodeSmall
+
+/sector {
+  /z exch def
+  newpath moveto currentpoint 10 z dup 90 add arc closepath
+  gsave cc fill grestore stroke
+} def
+
+/quad {
+  newpath moveto 10 0 rlineto 0 10 rlineto -10 0 rlineto closepath
+  gsave cc fill grestore stroke
+} def
+
+gsave
+[1 0 0.25 1 0 0] concat
+1 setgray
+1 setlinewidth
+
+10 20 90 sector
+0 10 quad
+0 10 270 sector
+
+20 20 90 sector
+20 20 180 sector
+20 10 180 sector
+
+20 20 0 sector
+20 10 0 sector
+20 10 270 sector
+
+40 20 90 sector
+30 10 quad
+30 10 270 sector
+
+/s {exch 100 div 0 rmoveto show} def
+/Schrift findfont 6 scalefont setfont 0 setgray
+42.5 24 moveto 0(S)s 5(ignal and I)s -5(nfor)s 5(mat)s 15(ion)s
+42.5 18 moveto 0(P)s -5(r)s -10(ocessing Laborator)s 5(y)s
+42.5 7.5 moveto 0(I)s -5(nst)s 15(i)s 10(tut f)s 10(År S)s 5(ignal)s 10(- u)s -10(nd)s
+42.5 1.5 moveto 0(I)s -5(nfo)s -10(r)s 5(mat)s 5(i)s -10(o)s -10(ns)s -10(v)s -10(e)s -10(rar)s 5(beitu)s -10(n)s -10(g)s
+grestore
+%%EOF

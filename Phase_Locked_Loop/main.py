@@ -1,25 +1,29 @@
 '''
 Created on 26.02.2014
 
-@author: Fabio Marti
+@authors: Daniel Gilgen, Fabio Marti
 '''
 import numpy as np
 import pylab as py
 import message as msg
 import utilities as util
+import time
 from matplotlib import rc
 
 
 def main():
     # Parameters
-    nOfSteps = 288
-    omega = 2*np.pi/144
-    phi = [0,np.pi/4,np.pi/2,np.pi]
-    harmonicFrequencies = [1,2,3]
-    amplitudes = [5,2,3]
-    variance = 2
-    gamma = 1
+    nOfSamples = 6000
+    T_s = 1/1000                        # Sampling Period [s]
+    f_W = 2                             # Fundamental frequency [Hz]
+    omega = 2*np.pi*f_W*T_s
+    harmonicFrequencies = [1,1.5,2]     # Multiples of the fundamental frequency
+    amplitudes = [4,3,1]                # Amplitudes of harmonics
+    phi = [0,0,0]                       # Phase shifts of harmonics
+    variance = 2                        # Noise variance
+    gamma = 1                           # "Forgetting" factor
     
+    print("Status:\n")
     
     # Generation of the state space model matrices
     nOfFrequencies = len(harmonicFrequencies)
@@ -34,9 +38,8 @@ def main():
     A = util.blockDiag(matrixList)
     
     
-    # Computation of the inverse of A (Remains fixed)
-    I = np.identity(A.shape[0])
-    A_inv = np.linalg.solve(A, I)
+    # Since A is orthogonal, the transpose of A is equal to its inverse
+    A_inv = np.transpose(A)
     
     
     # Initial values
@@ -45,23 +48,24 @@ def main():
         f = harmonicFrequencies[i]
         x_k[2*i,0] = np.cos(phi[i])
         x_k[2*i+1,0] = np.sin(phi[i])
-        
+    I = np.identity(A.shape[0])    
     W_x = I
     Wm_x = np.transpose(np.tile(np.array([[1,0]]),nOfFrequencies))
-    y = np.zeros(nOfSteps)
-    y_tilde = np.zeros(nOfSteps)
-    phase = np.zeros((nOfSteps,nOfFrequencies))
+    y = np.zeros(nOfSamples)
+    y_tilde = np.zeros(nOfSamples)
+    phase = np.zeros((nOfSamples,nOfFrequencies))
     
     
     # Solving the PLL problem iteratively via factor graphs
-    steps = np.arange(1,nOfSteps+1)
-    for step in steps:
+    samplingTime = T_s*np.arange(1,nOfSamples+1)
+    startTime = time.time()
+    for k in range(1,nOfSamples+1):
         x_k = np.dot(A, x_k)
         y_k = np.dot(C, x_k)
-        y[step-1] = y_k
-        z_k = variance*np.random.rand()
+        y[k-1] = y_k
+        z_k = variance*np.random.rand()     # Add white Gaussian noise
         y_tildek = y_k+z_k
-        y_tilde[step-1] = y_tildek
+        y_tilde[k-1] = y_tildek
         
         
         # Apply the message passing algorithm
@@ -72,18 +76,20 @@ def main():
         for i in range(0,nOfFrequencies):
             alpha = 1/(np.sqrt(mean_k[2*i]**2+mean_k[2*i+1]**2))  # Scale mean value
             phase_k = np.arccos(alpha*mean_k[2*i])
-            phase[step-1,i] = phase_k
+            phase[k-1,i] = phase_k
         
         # Incorporate forgetting factor
         W_x = W_x/gamma
         Wm_x = Wm_x/gamma
         
-    estimatedHarmonicSig = np.zeros(nOfSteps)
+    estimatedHarmonicSig = np.zeros(nOfSamples)
     for i in range(0,nOfFrequencies):
         estimatedHarmonicSig += amplitudes[i]*np.cos(phase[:,i])
+    stopTime = time.time()
+    executionTime = (stopTime-startTime)
+    print("Completed! The computation took %f seconds.\n" % executionTime)
     
-    
-    # Enable Latex functionality and fonts
+    # Enable LaTex functionality and fonts
     rc('text',usetex=True)
     rc('font',**{'family':'serif','serif':['Computer Modern']})
     
@@ -92,40 +98,58 @@ def main():
     py.figure(1)
     
     py.subplot(2,2,1)
-    py.plot(steps,y)
+    py.plot(samplingTime,y)
     py.title('Reference input signal')
-    py.xlabel('Timestep $k$')
-    py.ylabel('Amplitude')
+    py.xlabel('Time $t$ $[s]$')
+    py.ylabel('Amplitude $A$')
     
     py.subplot(2,2,2)
-    py.plot(steps,y_tilde)
+    py.plot(samplingTime,y_tilde)
     py.title('Noisy signal with $\sigma^2$ = ' + str(variance))
-    py.xlabel('Timestep $k$')
-    py.ylabel('Amplitude')
+    py.xlabel('Time $t$ $[s]$')
+    py.ylabel('Amplitude $A$')
     
     py.subplot(2,2,3)
-    py.plot(steps,phase[:,1],'x')
-    py.title('Estimated phase')
-    py.xlabel('Timestep $k$')
-    py.ylabel('Amplitude')
+    py.plot(samplingTime,phase[:,0],'x')
+    py.title('Estimated phase of fundamental harmonic')
+    py.xlabel('Time $t$ $[s]$')
+    py.ylabel('Amplitude $A$')
     
     py.subplot(2,2,4)
-    py.plot(steps,estimatedHarmonicSig)
+    py.plot(samplingTime,estimatedHarmonicSig)
     py.title('Estimated signal')
-    py.xlabel('Timestep $k$')
-    py.ylabel('Amplitude')
+    py.xlabel('Time $t$ $[s]$')
+    py.ylabel('Amplitude $A$')
     
     
-    # Plot the harmonics and the resultiing signal
+    # Plot the harmonics and the resulting signal
     py.figure(2)
-    for i in range(0,nOfFrequencies):
-        harmonic = amplitudes[i]*np.cos(steps*harmonicFrequencies[i]*omega+phi[i])
-        py.plot(steps,harmonic,color=util.colors(i),linewidth = 1.5)
     
-    py.plot(steps,y,color = 'k',linewidth = 2.5)
+    py.subplot(2,1,1)
+    for i in range(0,nOfFrequencies):
+        harmonic = amplitudes[i]*np.cos(2*np.pi*samplingTime*harmonicFrequencies[i]*f_W+phi[i])
+        py.plot(samplingTime,harmonic,color=util.colors(i),linewidth = 1.5)
+    py.plot(samplingTime,y,color = 'k',linewidth = 2.5)
     py.title('Reference input signals and corresponding harmonics')
-    py.xlabel('Timestep $k$')
-    py.ylabel('Amplitude')
+    py.xlabel('Time $t$ $[s]$')
+    py.ylabel('Amplitude $A$')
+    
+    
+    # Error analysis
+    py.subplot(2,1,2)
+    error = estimatedHarmonicSig-y
+    maxError = np.max(np.abs(error))
+    RMSError = np.sqrt(np.sum(error**2)/nOfSamples)
+    print("Error analysis")
+    print("Maximum absolute error:\t %f" % maxError)
+    print("Root-mean-square error:\t %f" % RMSError)
+    
+    py.axhline(color = 'k',linewidth = 1)
+    py.plot(samplingTime,error,color = 'r',linewidth = 1.5)
+    py.title('Estimation error')
+    py.xlabel('Time $t$ $[s]$')
+    py.ylabel('Error $E$')
+    
     py.show()
         
 if __name__ == '__main__':

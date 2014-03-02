@@ -1,0 +1,41 @@
+%!PS-Adobe-2.0 EPSF-2.0
+%%BoundingBox: 0 0 47 30
+%%Title: The ISI Logo Aug-2007
+%%EndComments
+
+/cc {0.26 0.77 0.58 setrgbcolor} def
+
+/sector {
+  /z exch def
+  newpath moveto currentpoint 10 z dup 90 add arc closepath
+  gsave cc fill grestore stroke
+} def
+
+/quad {
+  newpath moveto 10 0 rlineto 0 10 rlineto -10 0 rlineto closepath
+  gsave cc fill grestore stroke
+} def
+
+gsave
+[1 0 0.25 1 0 0] concat
+1 setgray
+1 setlinewidth
+
+10 20 90 sector
+0 10 quad
+0 10 270 sector
+
+20 20 90 sector
+20 20 180 sector
+20 10 180 sector
+
+20 20 0 sector
+20 10 0 sector
+20 10 270 sector
+
+40 20 90 sector
+30 10 quad
+30 10 270 sector
+
+grestore
+%%EOF
