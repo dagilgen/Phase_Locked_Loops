@@ -91,3 +91,41 @@ def blockDiag(matrixList):
         index += matSize
         
     return blockMatrix
+
+
+def phaseEstimator(phases,omegas,T_s,k):
+    """
+    !!DRAFT!! Estimates the phase shifts !!DRAFT!!
+    """
+    length = phases.shape[0]
+    pis = np.tile(2*np.pi,length)
+    a = phases - T_s*k*omegas
+    phaseShifts = np.mod(a,pis)
+    b = phases-phaseShifts
+    omega_hat = np.mod(b,pis)
+    n = omega_hat/omegas
+    estimatedTime = np.sum(n)/length
+    
+    estimatedPhase = phaseShifts + estimatedTime*omegas
+    
+    return estimatedPhase
+
+
+
+def phaseEstimator2(phases,omegas,T_s,k):
+    """
+    !!DRAFT!! Estimates the phase shift if all shifts of the harmonics are the same !!DRAFT!!
+    """
+    
+    
+    length = phases.shape[0]
+    pis = np.tile(2*np.pi,length)
+    a = phases - k*omegas
+    phaseShifts = np.mod(a,pis)
+
+    averagedPhaseShift = np.sum(phaseShifts)/length
+    
+    estimatedPhase = np.mod(averagedPhaseShift + k*omegas,pis)
+    #estimatedPhase = np.array([np.pi/2,np.pi/2,np.pi/2]) + k*omegas
+    
+    return estimatedPhase

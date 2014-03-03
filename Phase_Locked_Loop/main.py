@@ -13,13 +13,13 @@ from matplotlib import rc
 
 def main():
     # Parameters
-    nOfSamples = 6000
+    nOfSamples = 2000
     T_s = 1/1000                        # Sampling Period [s]
     f_W = 2                             # Fundamental frequency [Hz]
     omega = 2*np.pi*f_W*T_s
-    harmonicFrequencies = [1,1.5,2]     # Multiples of the fundamental frequency
-    amplitudes = [4,3,1]                # Amplitudes of harmonics
-    phi = [0,0,0]                       # Phase shifts of harmonics
+    harmonicFrequencies = [1,2,3]       # Multiples of the fundamental frequency
+    amplitudes = [4,4,4]                # Amplitudes of harmonics
+    phi = [0,np.pi/3,np.pi/2]           # Phase shifts of harmonics
     variance = 2                        # Noise variance
     gamma = 1                           # "Forgetting" factor
     
@@ -32,7 +32,7 @@ def main():
 
     for i in range(0,nOfFrequencies):
         f = harmonicFrequencies[i]
-        rotationalMatrix = np.array([[np.cos(f*omega),np.sin(f*omega)],[-np.sin(f*omega),np.cos(f*omega)]])
+        rotationalMatrix = np.array([[np.cos(f*omega),-np.sin(f*omega)],[np.sin(f*omega),np.cos(f*omega)]])
         matrixList.append(rotationalMatrix)
         C[0,2*i] = amplitudes[i]
     A = util.blockDiag(matrixList)
@@ -75,8 +75,12 @@ def main():
         # Compute phases of harmonic sinusoids
         for i in range(0,nOfFrequencies):
             alpha = 1/(np.sqrt(mean_k[2*i]**2+mean_k[2*i+1]**2))  # Scale mean value
-            phase_k = np.arccos(alpha*mean_k[2*i])
-            phase[k-1,i] = phase_k
+            cos_phase = np.arccos(alpha*mean_k[2*i])
+            sin_phase = np.arcsin(alpha*mean_k[2*i+1])
+            toggle = np.sign(sin_phase)
+            phase[k-1,i] = cos_phase*toggle + (1-np.floor(np.abs(toggle)))*np.pi
+        
+        #phase[k-1,0:nOfFrequencies] = util.phaseEstimator2(phase[k-1,0:nOfFrequencies],omega*np.array(harmonicFrequencies),T_s,k)
         
         # Incorporate forgetting factor
         W_x = W_x/gamma
@@ -130,7 +134,7 @@ def main():
         harmonic = amplitudes[i]*np.cos(2*np.pi*samplingTime*harmonicFrequencies[i]*f_W+phi[i])
         py.plot(samplingTime,harmonic,color=util.colors(i),linewidth = 1.5)
     py.plot(samplingTime,y,color = 'k',linewidth = 2.5)
-    py.title('Reference input signals and corresponding harmonics')
+    py.title('Reference input signal and corresponding harmonics')
     py.xlabel('Time $t$ $[s]$')
     py.ylabel('Amplitude $A$')
     
