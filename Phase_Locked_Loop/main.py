@@ -14,7 +14,7 @@ from matplotlib import rc
 def main():
     # Parameters
     nOfSamples = 2000
-    T_s = 1/1000                        # Sampling Period [s]
+    T_s = 1.0/1000                       # Sampling Period [s]
     f_W = 2                             # Fundamental frequency [Hz]
     omega = 2*np.pi*f_W*T_s
     harmonicFrequencies = [1,2,3]       # Multiples of the fundamental frequency
