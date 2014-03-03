@@ -104,13 +104,13 @@ def main():
     py.subplot(2,2,1)
     py.plot(samplingTime,y)
     py.title('Reference input signal')
-    py.xlabel('Time $t$ $[s]$')
+#    py.xlabel('Time $t$ $[s]$')
     py.ylabel('Amplitude $A$')
     
     py.subplot(2,2,2)
     py.plot(samplingTime,y_tilde)
     py.title('Noisy signal with $\sigma^2$ = ' + str(variance))
-    py.xlabel('Time $t$ $[s]$')
+#    py.xlabel('Time $t$ $[s]$')
     py.ylabel('Amplitude $A$')
     
     py.subplot(2,2,3)
