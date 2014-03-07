@@ -128,7 +128,7 @@ def directForwardMessagePassing(A_inv, C, variance, y_tilde, W_x, Wm_x):
     
     temp = np.dot(np.transpose(A_inv), W_x)
     W_xnew = np.dot(temp, A_inv) + np.dot(np.transpose(C), C)/variance
-    Wm_xnew = np.dot(np.transpose(C), y_tilde)/variance + np.dot(np.transpose(A_inv), Wm_x)
+    Wm_xnew = np.dot(np.transpose(A_inv), Wm_x) + np.dot(np.transpose(C), y_tilde)/variance
     
     return [W_xnew, Wm_xnew]
     

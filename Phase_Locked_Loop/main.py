@@ -13,15 +13,16 @@ from matplotlib import rc
 
 def main():
     # Parameters
-    nOfSamples = 2000
-    T_s = 1.0/1000                       # Sampling Period [s]
+    nOfSamples = 36000
+    T_s = 1.0/8000                      # Sampling Period [s]
     f_W = 2                             # Fundamental frequency [Hz]
     omega = 2*np.pi*f_W*T_s
-    harmonicFrequencies = [1,2,3]       # Multiples of the fundamental frequency
+    harmonicFrequencies = [1]           # Multiples of the fundamental frequency
     amplitudes = [4,4,4]                # Amplitudes of harmonics
     phi = [0,np.pi/3,np.pi/2]           # Phase shifts of harmonics
-    variance = 2                        # Noise variance
-    gamma = 1                           # "Forgetting" factor
+    variance = 4                        # Noise variance
+    gamma = 0.999                       # Forgetting factor
+    zeroThreshold = 1e-10               # Threshold below which numbers are treated as zero
     
     print("Status:\n")
     
@@ -63,12 +64,12 @@ def main():
         x_k = np.dot(A, x_k)
         y_k = np.dot(C, x_k)
         y[k-1] = y_k
-        z_k = variance*np.random.rand()     # Add white Gaussian noise
+        z_k = variance*np.random.randn()    # Add white Gaussian noise
         y_tildek = y_k+z_k
         y_tilde[k-1] = y_tildek
         
         
-        # Apply the message passing algorithm
+        # Apply the message passing algorithm with incorporated forgetting factor
         [W_x, Wm_x] = msg.directForwardMessagePassing(A_inv, C, variance, y_tildek, W_x, Wm_x)
         mean_k = np.linalg.solve(W_x, Wm_x)
         
@@ -81,10 +82,8 @@ def main():
             phase[k-1,i] = cos_phase*toggle + (1-np.floor(np.abs(toggle)))*np.pi
         
         #phase[k-1,0:nOfFrequencies] = util.phaseEstimator2(phase[k-1,0:nOfFrequencies],omega*np.array(harmonicFrequencies),T_s,k)
-        
-        # Incorporate forgetting factor
-        W_x = W_x/gamma
-        Wm_x = Wm_x/gamma
+        W_x = W_x*gamma
+        Wm_x = Wm_x*gamma   
         
     estimatedHarmonicSig = np.zeros(nOfSamples)
     for i in range(0,nOfFrequencies):
@@ -129,7 +128,7 @@ def main():
     # Plot the harmonics and the resulting signal
     py.figure(2)
     
-    py.subplot(2,1,1)
+    py.subplot(3,1,1)
     for i in range(0,nOfFrequencies):
         harmonic = amplitudes[i]*np.cos(2*np.pi*samplingTime*harmonicFrequencies[i]*f_W+phi[i])
         py.plot(samplingTime,harmonic,color=util.colors(i),linewidth = 1.5)
@@ -139,8 +138,16 @@ def main():
     py.ylabel('Amplitude $A$')
     
     
-    # Error analysis
-    py.subplot(2,1,2)
+    # Error analysis  
+    rawPhase = (phi[0] + (omega*np.arange(1,nOfSamples+1)))%(2*np.pi)       # Calculate the phase error
+    toggle = np.floor((np.sign(np.sin(rawPhase)+zeroThreshold))*0.5)        # Eliminate rounding errors
+    exactPhase = rawPhase + toggle*2*np.pi                                  # Shifts the phase into the interval
+                                                                            # [-pi,pi] instead of [0,2pi]
+    absPhaseDifferenceBottom = np.abs((phase[:,0]-exactPhase))              # Absolute phase difference towards 0
+    absPhaseDifferenceTop = 2*np.pi-np.abs((phase[:,0]-exactPhase))         # Absolute phase difference towards 2*pi
+    absPhaseDifference = np.minimum(absPhaseDifferenceBottom,absPhaseDifferenceTop)
+    
+    squaredPhaseError = ((np.abs(absPhaseDifference)%(2*np.pi)))**2
     error = estimatedHarmonicSig-y
     maxError = np.max(np.abs(error))
     RMSError = np.sqrt(np.sum(error**2)/nOfSamples)
@@ -148,9 +155,18 @@ def main():
     print("Maximum absolute error:\t %f" % maxError)
     print("Root-mean-square error:\t %f" % RMSError)
     
+    py.subplot(3,1,2)
     py.axhline(color = 'k',linewidth = 1)
     py.plot(samplingTime,error,color = 'r',linewidth = 1.5)
-    py.title('Estimation error')
+    py.title('Absolute estimation error')
+    py.xlabel('Time $t$ $[s]$')
+    py.ylabel('Error $E$')
+    
+    
+    py.subplot(3,1,3)
+    py.axhline(color = 'k',linewidth = 1)
+    py.plot(samplingTime,squaredPhaseError,color = 'r',linewidth = 1.5)
+    py.title('Squared fundamental phase error $|\hat{\phi}-\phi|^2$')
     py.xlabel('Time $t$ $[s]$')
     py.ylabel('Error $E$')
     
