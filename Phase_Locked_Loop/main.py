@@ -13,14 +13,15 @@ from matplotlib import rc
 
 def main():
     # Parameters
-    nOfSamples = 36000
-    T_s = 1.0/8000                      # Sampling Period [s]
+    useCompleteModel = False             # Choose the message passing model
+    nOfSamples = 6000
+    T_s = 1.0/1000                      # Sampling Period [s]
     f_W = 2                             # Fundamental frequency [Hz]
     omega = 2*np.pi*f_W*T_s
-    harmonicFrequencies = [1]           # Multiples of the fundamental frequency
+    harmonicFrequencies = [1,2]           # Multiples of the fundamental frequency
     amplitudes = [4,4,4]                # Amplitudes of harmonics
     phi = [0,np.pi/3,np.pi/2]           # Phase shifts of harmonics
-    variance = 4                        # Noise variance
+    variance = 1                        # Noise variance
     gamma = 0.999                       # Forgetting factor
     zeroThreshold = 1e-10               # Threshold below which numbers are treated as zero
     
@@ -29,13 +30,12 @@ def main():
     # Generation of the state space model matrices
     nOfFrequencies = len(harmonicFrequencies)
     matrixList = []
-    C = np.zeros((1,2*nOfFrequencies))
-
+    c = np.array([[1,0]])
+    C = np.tile(c,(1,nOfFrequencies))
     for i in range(0,nOfFrequencies):
         f = harmonicFrequencies[i]
         rotationalMatrix = np.array([[np.cos(f*omega),-np.sin(f*omega)],[np.sin(f*omega),np.cos(f*omega)]])
         matrixList.append(rotationalMatrix)
-        C[0,2*i] = amplitudes[i]
     A = util.blockDiag(matrixList)
     
     
@@ -47,8 +47,8 @@ def main():
     x_k = np.zeros((2*nOfFrequencies,1))
     for i in range(0,nOfFrequencies):
         f = harmonicFrequencies[i]
-        x_k[2*i,0] = np.cos(phi[i])
-        x_k[2*i+1,0] = np.sin(phi[i])
+        x_k[2*i,0] = amplitudes[i]*np.cos(phi[i])
+        x_k[2*i+1,0] = amplitudes[i]*np.sin(phi[i])
     I = np.identity(A.shape[0])    
     W_x = I
     Wm_x = np.transpose(np.tile(np.array([[1,0]]),nOfFrequencies))
@@ -70,7 +70,10 @@ def main():
         
         
         # Apply the message passing algorithm with incorporated forgetting factor
-        [W_x, Wm_x] = msg.directForwardMessagePassing(A_inv, C, variance, y_tildek, W_x, Wm_x)
+        if useCompleteModel:
+            [W_x, Wm_x] = msg.forwardMessagePassingComplete(A_inv, C, variance, y_tildek, W_x, Wm_x)
+        else:
+            [W_x, Wm_x] = msg.forwardMessagePassingSplit(A_inv, c, variance, y_tildek, W_x, Wm_x)
         mean_k = np.linalg.solve(W_x, Wm_x)
         
         # Compute phases of harmonic sinusoids

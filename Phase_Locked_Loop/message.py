@@ -5,6 +5,7 @@ Created on 26.02.2014
 '''
 
 import numpy as np
+import utilities as util
 
 def equalityConstraint(W_x, W_y, Wm_x, Wm_y):
     '''
@@ -97,10 +98,11 @@ def forwardMessagePassing(A, C, variance, y_tilde, W_x, Wm_x):
     return [W_xnew, Wm_xnew]
     
     
-def directForwardMessagePassing(A_inv, C, variance, y_tilde, W_x, Wm_x):
+def forwardMessagePassingComplete(A_inv, C, variance, y_tilde, W_x, Wm_x):
     '''
     Performs forward message passing for one iteration by using the
-    explicit formula for one step of the PLL factor graph
+    explicit formula for one step of the PLL factor graph. Uses the complete
+    factor graph as underlying factor graph model.
     
     Inputs:    
     
@@ -123,11 +125,51 @@ def directForwardMessagePassing(A_inv, C, variance, y_tilde, W_x, Wm_x):
     W_xnew : array-like
         New forward message of inverse of the covariance matrix
     Wm_xnew : array-like
-        New forward message of the combined covaraince-mean message
+        New forward message of the combined covariance-mean message
     '''
     
     temp = np.dot(np.transpose(A_inv), W_x)
     W_xnew = np.dot(temp, A_inv) + np.dot(np.transpose(C), C)/variance
+    Wm_xnew = np.dot(np.transpose(A_inv), Wm_x) + np.dot(np.transpose(C), y_tilde)/variance
+    
+    return [W_xnew, Wm_xnew]
+
+
+def forwardMessagePassingSplit(A_inv, c, variance, y_tilde, W_x, Wm_x):
+    '''
+    Performs forward message passing for one iteration by using the
+    explicit formula for one step of the PLL factor graph. Uses the split
+    factor graph as underlying factor graph model.
+    
+    Inputs:    
+    
+    A_inv : array-like
+        Inverse of the factor graph's state space matrix A
+    c : array-like
+        Output matrix for one single state-output mapping
+    variance : float
+        Variance of the white Gaussian noise applied on the output
+    y_tilde : float
+        Currently observed output value
+    W_x : array-like
+        Current forward message of inverse of the covariance matrix
+    Wm_x : array-like
+        Current forward message of the combined covariance-mean message
+    
+    
+    Outputs:
+    
+    W_xnew : array-like
+        New forward message of inverse of the covariance matrix
+    Wm_xnew : array-like
+        New forward message of the combined covariance-mean message
+    '''
+    
+    temp = np.dot(np.transpose(A_inv), W_x)
+    nOfFrequencies = A_inv.shape[1]/2
+    C = np.tile(c,(1,nOfFrequencies))
+    iidNoiseMatrix = util.blockDiag(nOfFrequencies*[np.dot(np.transpose(c), c)])
+    W_xnew = np.dot(temp, A_inv) + iidNoiseMatrix/variance
     Wm_xnew = np.dot(np.transpose(A_inv), Wm_x) + np.dot(np.transpose(C), y_tilde)/variance
     
     return [W_xnew, Wm_xnew]
