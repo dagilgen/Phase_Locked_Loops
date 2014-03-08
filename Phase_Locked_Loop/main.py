@@ -13,16 +13,16 @@ from matplotlib import rc
 
 def main():
     # Parameters
-    useCompleteModel = False             # Choose the message passing model
-    nOfSamples = 6000
+    useCompleteModel = True             # Choose the message passing model
+    nOfSamples = 2000
     T_s = 1.0/1000                      # Sampling Period [s]
     f_W = 2                             # Fundamental frequency [Hz]
     omega = 2*np.pi*f_W*T_s
-    harmonicFrequencies = [1,2]           # Multiples of the fundamental frequency
+    harmonicFrequencies = [1,2,3]           # Multiples of the fundamental frequency
     amplitudes = [4,4,4]                # Amplitudes of harmonics
     phi = [0,np.pi/3,np.pi/2]           # Phase shifts of harmonics
     variance = 1                        # Noise variance
-    gamma = 0.999                       # Forgetting factor
+    gamma = 0.9995                       # Forgetting factor
     zeroThreshold = 1e-10               # Threshold below which numbers are treated as zero
     
     print("Status:\n")
@@ -49,8 +49,8 @@ def main():
         f = harmonicFrequencies[i]
         x_k[2*i,0] = amplitudes[i]*np.cos(phi[i])
         x_k[2*i+1,0] = amplitudes[i]*np.sin(phi[i])
-    I = np.identity(A.shape[0])    
-    W_x = I
+    identity = np.identity(A.shape[0])    
+    W_x = identity
     Wm_x = np.transpose(np.tile(np.array([[1,0]]),nOfFrequencies))
     y = np.zeros(nOfSamples)
     y_tilde = np.zeros(nOfSamples)
