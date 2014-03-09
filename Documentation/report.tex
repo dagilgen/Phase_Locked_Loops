@@ -30,7 +30,13 @@
 
 % \usepackage{amsthm} % or % \usepackage{theorem} % for theorems
 
-% \usepackage{algorithmicx} % typesetting algorithms
+\usepackage{algorithm}			% Write pseudocode
+\usepackage{algpseudocode}
+\usepackage{algorithmicx}
+\newcommand{\Parameters}{\Statex \hspace{-0.78 cm} \textbf{Parameters: }}
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+
 
 % \usepackage[labelfont={md}]{subfig} % for sub-floats, e.g. sub-figures
 
@@ -143,6 +149,7 @@
 % Chapter 1: Principles of Phase-Locked Loops
 \chapter{Principles of Phase-Locked Loops}
 \include{./01_PrinciplesPLL/PrinciplesPLL}
+
 
 % Chapter 2: Tracking of a Sinusoidal Signal
 \chapter{Tracking of a Sinusoidal Signal}
