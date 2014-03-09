@@ -7,16 +7,13 @@ Created on 28.02.2014
 import numpy as np
 
 
-"""
-Error Class. Used to raise errors.
-"""
 class Error(Exception):
+    """Error Class. Used to raise errors."""
     pass
 
 
 def colors(colorIndex):
-    """
-    Returns the respective RGB color for a certain input number.
+    """Returns the respective RGB color for a certain input number.
     
     Inputs:
     
@@ -58,8 +55,7 @@ def colors(colorIndex):
 
 
 def blockDiag(matrixList):
-    """
-    Takes square matrices as input and constructs a block diagonal
+    """Takes square matrices as input and constructs a block diagonal
     matrix in order of their appearance as input arguments.
     
     Inputs:

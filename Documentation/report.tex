@@ -22,6 +22,7 @@
 \usepackage{tikz} % versatile drawing facilities
 \usetikzlibrary{fit} % used for the example tikzpicture
 \usepackage{pgfplots} % versatile plotting facilities
+\usepackage{factorGraphs} % package that has macros for factor graphs
 
 % \usepackage{psfrag}
 % \usepackage[crop=pdfcrop,cleanup={.tex,.dvi,.ps,.pdf,.log,.aux,.idx,.toc,.out}]
@@ -48,7 +49,7 @@
 
 \renewcommand{\baselinestretch}{1.2}
 
-% Here the document starts
+% Here the document starts %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{document}
 
 \pagenumbering{Roman}
@@ -96,6 +97,10 @@
 (Here the project description may be put in \ldots page 2)
 \cleardoublepage
 
+<<<<<<< HEAD
+% Including abstract
+\include{./00_Abstract/Abstract}
+=======
 % Dedication and/or quotation (optional)
 \thispagestyle{empty}
 \bigskip
@@ -128,7 +133,7 @@ Zürich, 00 March 2013
 
 \vspace{19mm}
 \noindent
-Fabienne Fröhlich \hfill Mark Muster \hfill \null
+Daniel Gilgen \hfill Fabio Marti \hfill \null
 \cleardoublepage
 
 % English abstract
@@ -187,173 +192,107 @@ Here comes the abstract \ldots
 \fancyhead[LE]{\scshape \chaptername\ \thechapter}
 \fancyhead[RE]{\textsc{\leftmark}}
 
-% Chapters
-\chapter{Introduction}
-(The chapters are better included by the command \verb|\include{file}|.)
+% Chapters %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-This framework for your report hopefully helps you getting started quickly.  If
-you are not familiar with \LaTeX{}, a good starting point is
-\url{http://tobi.oetiker.ch/lshort/lshort.pdf}
+<<<<<<< HEAD
+% Chapter 1: Principles of Phase-Locked Loops
+\chapter{Principles of Phase-Locked Loops}
+\include{./01_PrinciplesPLL/PrinciplesPLL}
+=======
 
-\section{Compilation}
-You can use shell commands to compile this document into a pdf file either as:
-\begin{verbatim}
-pdflatex report.tex
-bibtex report
-pdflatex report.tex
-pdflatex report.tex
-\end{verbatim}
-or as:
-\begin{verbatim}
-latex report.tex
-bibtex report
-latex report.tex
-latex report.tex
-dvips report.dvi -o report.ps
-ps2pdf report.ps
-\end{verbatim}
 
-Of course you can use this file with dedicated \LaTeX{} editors like Kile or
-TexMaker, or you can call \texttt{(pdf)latex} from within a text editor that has
-a \LaTeX{} mode, such as Emacs or Vim.
-
-\section{Citations}
-
-You can use \verb|bibtex| to include a citation, e.g. \cite{loeliger2007}.  For
-every publication you would like to cite you have to add an entry in the
-\verb|bibliograpy.bib| file.
-
-\section{Math}
-Different shapes $\phi$, $\Phi$, $\varPhi$, $x$, $\mathbf{x}$, $\boldsymbol{x}$,
-$\boldsymbol{\phi}$, $\mathbb{R}$, $\mathcal{R}$, $\mathsf{E}$
-
-An equation:
-\begin{equation*}
-  e = \lim_{k\to\infty} \left( 1 + \frac{1}{k} \right)^k
-\end{equation*}
-
-Aligned equations, this time with labels:
-\begin{align}
-  \label{eq:1}
-  f(x) &= \sum_{k=1}^\infty \frac{1}{x^k}\\
-  \label{eq:2}
-  &= \log(1+e^x)
-\end{align}
-In Eq.~\eqref{eq:1} we have a sum.  In Eq.~\eqref{eq:2}, $e$ is Euler's number.
-
-\section{Floats}
-Floats are figures and tables that are allowed to appear anywhere on the page.
-
-\subsection{Tables}
-Table~\ref{tab:table} shows an example table.  Better spacing is achieved by
-using either the \texttt{booktab} or the \texttt{mdwtab} package.
-
-\begin{table}[htb]
-  \centering
-  \begin{tabular}{@{}lccp{5cm}@{}}
-    \textbf{Fruit} & \multicolumn{2}{l}{\textbf{Some numbers}} & \textbf{An
-      explanation}\\ \hline\hline
-    Apple & 3 Pieces & 320 g & An apple a day keeps the doctor away.\\ \hline
-    Pineapple & 2 Pieces & 540 g & Apples and pineapples share a part of their
-    name. \\ \hline
-    Strawberry & 1 Basket & 120 g & They do not continue to ripen after having
-    been picked.\\ \hline 
-  \end{tabular}
-  \caption{An example table.}
-  \label{tab:table}
-\end{table}
-
-\subsection{Figures}
-Fig.~\ref{fig:pict} is drawn with the ordinary \LaTeX{} drawing commands.
-Fig.~\ref{fig:tikz} is drawn with the Ti\emph{k}Z package.  Of course you can
-also use your favorite stand-alone graphics drawing application to produce an
-eps file (for \texttt{latex}) or a pdf file (for \texttt{pdflatex}) and include
-this file, such as done in Fig.~\ref{fig:externalfig}.  Plotting can also be
-done directly from a data file with the pgfplots package (which builds on the
-Ti\emph{k}Z package) as exemplified in Fig.~\ref{fig:pgfplots}.
 
 \begin{figure}[h]
-  \centering
-  \setlength{\unitlength}{1mm}
-  \begin{picture}(39,21)
-    \put(0,6){\vector(1,0){10}}
-    \put(4,9){\makebox(0,0){$x(t)$}}
-    \put(10,2){\framebox(8,8){$f(\cdot)$}}
-    \put(18,6){\vector(1,0){5}}
-    \put(26,6){\circle{6}}
-    \put(26,6){\makebox(0,0){$+$}}
-    \put(26,19){\vector(0,-1){10}}
-    \put(25,15){\makebox(0,0)[r]{$z(t)$}}
-    \put(29,6){\vector(1,0){10}}
-    \put(35,9){\makebox(0,0){$y(t)$}}
-    \multiput(8,0)(1.5,0){16}{\line(1,0){0.5}}
-    \multiput(31,0)(0,1.5){14}{\line(0,1){0.5}}
-    \multiput(8,0)(0,1.5){14}{\line(0,1){0.5}}
-    \multiput(8,21)(1.5,0){16}{\line(1,0){0.5}}
-  \end{picture}
-  \caption{This is a figure drawn with the \texttt{picture} environment.}
-  \label{fig:pict}
+	\centering
+    	
+	\begin{tikzpicture}
+	\factorNode{1}{1}{2}{2}{$A$}
+	\factorNode{3}{1}{2}{2}{$B$}
+	\factorNode{5}{1}{2}{2}{$A$}
+	\rightArrow{7}{7}{2}{$X_k$}
+	\leftArrow{9}{6}{2}{$Y_k$}
+	\upArrow{1}{4}{2}{$W_k$}
+	\downArrow{2}{6}{2}{$V_k$}
+	\observable{4}{4}{0.25}{0.25}{$y_k$}
+	\forwardMessage{5}{4}{$\hat{W_k}$}
+	\forwardMessage{5}{6}{$\hat{W_k}\hat{m_k}$}
+	\end{tikzpicture}
+
+  	\caption[Some factor graph elements]
+   	{All elements from the file factorGraph.sty.}
+	\label{factor_graph}
 \end{figure}
 
-\begin{figure}[htb]
-  \centering
-  \begin{tikzpicture}[>=latex,node distance=18mm,<-]
-    \coordinate (x);
-    \node[draw,right of=x] (f) {$f(\cdot)$} edge node[above] {$x(t)$} (x);
-    \node[draw,circle,right of=f] (p) {$+$} edge (f);
-    \coordinate[above of=p] (z) edge[->] node[left] {$z(t)$} (p);
-    \coordinate[right of=p] edge node[above] {$y(t)$} (p);
-    \node[draw,inner sep=2mm,dashed,fit=(f)(z)(p)] {};
-  \end{tikzpicture}
-  \caption{This is a figure drawn with the \texttt{tikzpicture} environment.}
-  \label{fig:tikz}
+
+\begin{figure}[h]
+	\centering
+	\begin{tikzpicture}
+	\def\x{0}
+	\def\y{0}
+	\def\s{1.4}
+	\def\b{1.4}
+	
+	\draw node[left] at (\x,\y+\s*4) {$\ldots$};
+	\rightArrow{\x}{\y+\s*4}{\s*1}{$X_{k}$}
+	\factorNode{\x+\s*1}{\y+\s*4-\b*0.5}{\b}{\b}{$A$}
+	\rightArrow{\x+\s*1+\b}{\y+\s*4}{\s}{}
+	\factorNode{\x+\s*2+\b}{\y+\s*4-\b*0.5}{\b}{\b}{$=$}
+	\rightArrow{\x+\s*2+\b*2}{\y+\s*4}{\s}{$X_{k+1}$}
+	\draw node[right] at (\x+\s*3+\b*2,\y+\s*4) {$\ldots$};
+
+	\downArrow{\x+\s*2+\b*1.5}{\y+\s*4-\b*0.5}{\s}{}
+	\factorNode{\x+\s*2+\b}{\y+\s*3-\b*1.5}{\b}{\b}{$C$}
+	\downArrow{\x+\s*2+\b*1.5}{\y+\s*3-\b*1.5}{\s}{$Y_{k+1}$}
+	\factorNode{\x+\s*2+\b}{\y+\s*2-\b*2.5}{\b}{\b}{$+$}
+	\downArrow{\x+\s*2+\b*1.5}{\y+\s*2-\b*2.5}{\s}{}
+	\observable{\x+\s*2+\b*1.375}{\y+\s-\b*2.75}{\b*0.25}{\b*0.25}{$\tilde{y}_{k+1}$}
+
+	\factorNode{\x+\s*1}{\y+\s*2-\b*2.5}{\b}{\b}{}
+	\draw node[below] at (\x+\s*1+\b*0.5,\y+\s*2-\b*2.5) {$\mathcal{N}(0,\sigma^2)$};
+	\rightArrow{\x+\s*1+\b}{\y+\s*2-\b*2}{\s}{$Z_{k+1}$}
+	\end{tikzpicture}
+
+  	\caption[Exemplary factor graph]
+   	{This factor graph has been constructed with custom-built TikZ macros.}
+	\label{factor_graph}
 \end{figure}
 
-\begin{figure}[htb]
-  \centering
-  \includegraphics[width=\textwidth]{gfx/externalfig}
-  \caption{A plot from an external eps or pdf file.}
-  \label{fig:externalfig}
+\begin{figure}[h]
+	\centering
+	\begin{tikzpicture}
+	\pllFactorGraph{0}{0}{1}{1}{k-1}{k}
+	\end{tikzpicture}
+
+  	\caption[Exemplary factor graph]
+   	{This factor graph has been constructed with the factor graph macro from factorGraphs.sty.}
+	\label{factor_graph}
 \end{figure}
 
-\begin{figure}[htb]
-  \centering
-  \pgfplotstableread{data.dat}\plotdata
-  \begin{tikzpicture}
-    \begin{axis}[height=4.5cm,width=\textwidth,
-      xmin=0,xmax=10,ymin=0,ymax=1,
-      title=Plot 1]
-      \addplot[blue] table[x index=0,y index=1] {\plotdata};
-      \addplot[red] table[x index=0,y index=2] {\plotdata};
-      \legend{$x$, $\gamma_\beta$}
-    \end{axis}
-    \begin{axis}[yshift=-4.5cm,height=4.5cm,width=\textwidth,
-      xmin=0,xmax=10,ymin=-1,ymax=1,
-      xlabel={$t\ [s]$},
-      title=Plot 2]
-      \addplot[blue] table[x index=0,y index=3] {\plotdata};
-    \end{axis}
-  \end{tikzpicture}
-  \caption{A \texttt{pgfplots} plot.}
-  \label{fig:pgfplots}
-\end{figure}
+
+
+
 
 \clearpage
 
-% Appendices (optional)
-\appendix
-\fancyhead[LO]{\rightmark}
-\fancyhead[RO]{\scshape\appendixname\ \thechapter}
-\fancyhead[LE]{\scshape\appendixname\ \thechapter}
-\fancyhead[RE]{\textsc{\leftmark}}
 
-\chapter[Proof of Upper Bound]{Proof for the Lower Bound on the Number of
-  Conundrums}
-Since we classify the Gordian knot as a conundrum, there is at least one such.
+% Chapter 2: Tracking of a Sinusoidal Signal
+\chapter{Tracking of a Sinusoidal Signal}
+\include{./02_TrackingSinusoid/TrackingSinusoid}
 
-\clearpage
+% Chapter 3: PLL for Harmonic Signals
+\chapter{PLL for Harmonic Signals}
+\include{./03_HarmonicSignals/HarmonicSignals}
 
-% Bibliography
+% Chapter 4: BlaBlaBla
+\chapter{BlaBlaBla}
+
+
+% Appendices %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\include{./Appendices/AppendixA}
+
+% Bibliography %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 \fancyhead[LO]{\scshape\bibname}
 \fancyhead[RO]{\scshape\appendixname}
 \fancyhead[LE]{\scshape\appendixname}

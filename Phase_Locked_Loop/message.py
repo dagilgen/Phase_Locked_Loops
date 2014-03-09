@@ -8,8 +8,7 @@ import numpy as np
 import utilities as util
 
 def equalityConstraint(W_x, W_y, Wm_x, Wm_y):
-    '''
-    Computes the matrix equality constraint
+    '''Computes the matrix equality constraint
     
     Inputs:    W_x, W_y, Wm_x, Wm_y
     Outputs:   W_z, Wm_z
@@ -22,8 +21,7 @@ def equalityConstraint(W_x, W_y, Wm_x, Wm_y):
     
     
 def forwardSumConstraint(V_x, V_y, m_x, m_y):
-    '''
-    Computes the forward matrix sum constraint
+    '''Computes the forward matrix sum constraint
     
     Inputs:    V_x, V_y, m_x, m_y
     Outputs:   V_z, m_z
@@ -36,8 +34,7 @@ def forwardSumConstraint(V_x, V_y, m_x, m_y):
     
     
 def backwardSumConstraint(V_y, V_z, m_y, m_z):
-    '''
-    Computes the backward matrix sum constraint
+    '''Computes the backward matrix sum constraint
     
     Inputs:    V_y, V_z, m_y, m_z
     Outputs:   V_x, m_x
@@ -50,8 +47,7 @@ def backwardSumConstraint(V_y, V_z, m_y, m_z):
     
     
 def forwardMatrixMultConstraint(V_x, m_x, A):
-    '''
-    Computes the forward matrix multiplication constraint
+    '''Computes the forward matrix multiplication constraint
     
     Inputs:    V_x, m_x, A
     Outputs:   V_y, m_y
@@ -65,8 +61,7 @@ def forwardMatrixMultConstraint(V_x, m_x, A):
     
     
 def backwardMatrixMultConstraint(W_y, Wm_y, A):
-    '''
-    Computes the backward matrix multiplication constraint
+    '''Computes the backward matrix multiplication constraint
     
     Inputs:    W_y, Wm_y, A
     Outputs:   W_x, Wm_x
@@ -80,8 +75,7 @@ def backwardMatrixMultConstraint(W_y, Wm_y, A):
     
     
 def forwardMessagePassing(A, C, variance, y_tilde, W_x, Wm_x):
-    '''
-    Performs forward message passing for one iteration
+    '''Performs forward message passing for one iteration
     
     Inputs:    A, C, variance, y_tilde, W_x, Wm_x
     Outputs:   W_xnew, Wm_xnew
@@ -99,8 +93,7 @@ def forwardMessagePassing(A, C, variance, y_tilde, W_x, Wm_x):
     
     
 def forwardMessagePassingComplete(A_inv, C, variance, y_tilde, W_x, Wm_x):
-    '''
-    Performs forward message passing for one iteration by using the
+    '''Performs forward message passing for one iteration by using the
     explicit formula for one step of the PLL factor graph. Uses the complete
     factor graph as underlying factor graph model.
     
@@ -136,8 +129,7 @@ def forwardMessagePassingComplete(A_inv, C, variance, y_tilde, W_x, Wm_x):
 
 
 def forwardMessagePassingSplit(A_inv, c, variance, y_tilde, W_x, Wm_x):
-    '''
-    Performs forward message passing for one iteration by using the
+    '''Performs forward message passing for one iteration by using the
     explicit formula for one step of the PLL factor graph. Uses the split
     factor graph as underlying factor graph model.
     
