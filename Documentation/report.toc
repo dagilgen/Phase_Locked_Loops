@@ -3,17 +3,17 @@
 \select@language {USenglish}
 \select@language {ngerman}
 \select@language {USenglish}
-\contentsline {chapter}{\hbox to\@tempdima {\hfil }List of Figures}{XVI}{section*.3}
-\contentsline {chapter}{\hbox to\@tempdima {\hfil }List of Tables}{XVII}{section*.5}
+\contentsline {chapter}{\hbox to\@tempdima {\hfil }List of Figures}{XIV}{section*.3}
+\contentsline {chapter}{\hbox to\@tempdima {\hfil }List of Tables}{XV}{section*.5}
 \contentsline {chapter}{\numberline {1}Principles of Phase-Locked Loops}{2}{chapter.7}
 \contentsline {section}{\numberline {1.1}Introduction}{3}{section.8}
 \contentsline {section}{\numberline {1.2}Blabla}{3}{section.9}
-\contentsline {chapter}{\numberline {2}Tracking of a Sinusoidal Signal}{6}{chapter.13}
-\contentsline {section}{\numberline {2.1}Introduction}{7}{section.14}
-\contentsline {section}{\numberline {2.2}Blabla}{7}{section.15}
-\contentsline {chapter}{\numberline {3}PLL for Harmonic Signals}{8}{chapter.16}
-\contentsline {section}{\numberline {3.1}Introduction}{9}{section.17}
-\contentsline {section}{\numberline {3.2}Blabla}{9}{section.18}
-\contentsline {chapter}{\numberline {4}BlaBlaBla}{10}{chapter.19}
-\contentsline {chapter}{\numberline {A}Proof of Upper Bound}{11}{appendix.20}
-\contentsline {chapter}{\hbox to\@tempdima {\hfil }Bibliography}{12}{section*.21}
+\contentsline {chapter}{\numberline {2}Tracking of a Sinusoidal Signal}{8}{chapter.16}
+\contentsline {section}{\numberline {2.1}Introduction}{9}{section.17}
+\contentsline {section}{\numberline {2.2}Blabla}{9}{section.18}
+\contentsline {chapter}{\numberline {3}PLL for Harmonic Signals}{10}{chapter.19}
+\contentsline {section}{\numberline {3.1}Introduction}{11}{section.20}
+\contentsline {section}{\numberline {3.2}Blabla}{11}{section.21}
+\contentsline {chapter}{\numberline {4}BlaBlaBla}{12}{chapter.22}
+\contentsline {chapter}{\numberline {A}Proof of Upper Bound}{13}{appendix.23}
+\contentsline {chapter}{\hbox to\@tempdima {\hfil }Bibliography}{14}{section*.24}
