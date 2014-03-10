@@ -1,0 +1,318 @@
+\documentclass[11pt,a4paper,twoside]{report}
+
+\usepackage[ngerman,USenglish]{babel} % Swap languages with \selectlanguage{...}
+\usepackage[utf8]{inputenc} % to write characters (à,Ü,...) in the source
+\usepackage[T1]{fontenc} % make characters (à,Ü,...) appear as such in the pdf
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb,amsfonts} % math stuff
+\usepackage{array} % better implementation of tabular and array environments
+\usepackage{graphicx} % graphics inclusion
+\usepackage{fancyhdr} % beautiful page headers/footers
+\usepackage{emptypage} % removes header/footer from empty pages
+\usepackage{microtype} % beautiful typesetting
+\usepackage{verbatim} % typesetting raw text
+
+% More packages.  Uncomment what you need:
+
+% \usepackage{bbm} % if you need $\mathbbm{1}$
+% \usepackage{mathrsfs} % if you need more math script fonts $\mathscr{A}$
+% \usepackage{pifont} % more symbols, e.g., circled numbers
+
+\usepackage{pict2e} % a better picture environment
+\usepackage{tikz} % versatile drawing facilities
+\usetikzlibrary{fit} % used for the example tikzpicture
+\usepackage{pgfplots} % versatile plotting facilities
+
+% \usepackage{psfrag}
+% \usepackage[crop=pdfcrop,cleanup={.tex,.dvi,.ps,.pdf,.log,.aux,.idx,.toc,.out}]
+% {pstool} % a pdf-compatible alternative to psfrag.
+
+% \usepackage{amsthm} % or % \usepackage{theorem} % for theorems
+
+% \usepackage{algorithmicx} % typesetting algorithms
+
+% \usepackage[labelfont={md}]{subfig} % for sub-floats, e.g. sub-figures
+
+\usepackage{url} % write URLs
+\usepackage{factorGraphs} % package that has macros for factor graphs
+
+% the last package to load:
+\usepackage[bookmarksnumbered=true,hypertexnames=false]{hyperref} % hyperlinks
+
+% Page layout
+\setlength{\oddsidemargin}{2.5cm}
+\setlength{\evensidemargin}{0.5cm}
+\addtolength{\textheight}{0.0cm}
+\addtolength{\textwidth}{0.0cm}
+\addtolength{\topmargin}{0.0cm}
+\setlength{\headheight}{3ex}
+
+\renewcommand{\baselinestretch}{1.2}
+
+%\newcommand{\vecbf}{\overrightarrow{\mathbf{\vec}}_{X_{k}}}
+%\newcommand{\messF}[1]{\vec{#1}_{X_{k}}}
+\newcommand{\messF}[3]{\vec{#1}_{{#2}_{k{#3}}}}
+\newcommand{\messB}[3]{\overleftarrow{#1}_{{#2}_{k{#3}}}}
+
+\newcommand{\mat}[1]{\mathbf{#1}}
+%\overrightarrow{\mathbf{m}}_{X_{k}}
+
+% Here the document starts
+\begin{document}
+\pagestyle{plain}
+
+\chapter*{Derivation of Update Rules for Kalman-Based PLL}
+In Figure \ref{factor_graph} we can see a factor graph representation of a Kalman-based phase-locked loop. The matrices $A$, $C$ and the observed measurements $\tilde{y}_k$ are given as follows
+
+\begin{align*}
+	&\mat{A} = R(\omega_0) = 
+		\begin{bmatrix}
+			\cos{(\omega_0)} & -\sin{(\omega_0} \\
+			\sin{(\omega_0} & \cos{(\omega_0}
+		\end{bmatrix},
+	\\
+	&\mat{C} = 
+		\begin{bmatrix}
+			1 & 0
+		\end{bmatrix},
+	\\
+	&\tilde{y}_k = \cos({\omega_0k + \phi}) + Z_k, \qquad Z_k \overset{i.i.d}{\sim} \mathcal{N}\left(0, \sigma^2\right).
+\end{align*}
+
+Since $Z_k$ is a Gaussian random variable it follows that all random variables in the factor graph are Gaussian. The states $X_k$ can therefore be described by its mean vector and covariance matrix.
+
+\begin{figure}[h]
+	\centering
+	\begin{tikzpicture}
+		\pllFactorGraph{0}{0}{1}{1}{k-1}{k}
+	\end{tikzpicture}
+
+  	\caption[Exemplary factor graph]
+   	{Factor graph representation of a Kalman filter's \textit{k}th cell.}
+	\label{factor_graph}
+\end{figure}
+
+In every step $k$, a new sample $y_k$ is observed. Together with this sample and the previous state $X_{k-1}$, using Gaussian message passing, we can calculate the next state estimate $X_k$.
+
+We begin the message passing algorithm by computing the message given by the observed samples $\tilde{y}_k$ \cite{SIP}
+
+\begin{align}
+	\label{eq: noise}
+	\messF{m}{Z}{} = 0  \qquad &\messF{V}{Z}{} = \sigma^2 \\
+	\label{eq: sample}
+	\messB{m}{\tilde{Y}}{} = \tilde{y}_k  \qquad &\messB{V}{\tilde{Y}}{} = 0.
+\end{align}
+
+In a next step, we add the noise in Eq. (\ref{eq: noise}) to the observed sample in Eq. (\ref{eq: sample}) to get the message at $Y_k$
+\begin{align}
+	\label{eq: noisy samples}
+	\messB{m}{Y}{} = \tilde{y}_k \qquad &\messB{V}{Y}{} =  \sigma^2.
+\end{align}
+
+With these results, we can now compute the messages at the equality constraint
+\begin{align}
+	\label{eq: previous state}
+	\messF{m}{X''}{} = \mat{A}\messF{m}{X}{-1} \qquad &\messF{V}{X''}{} = \mat{A}\messF{V}{X}{-1}\mat{A}_T \\
+	\label{eq: input}
+	\messB{W}{X'}{} = \mat{C}^T\messB{W}{Y}{}\mat{C}  \qquad &\messB{W}{X'}{}\messB{m}{X'}{} = \mat{C}^T\messB{W}{Y}{}\messB{m}{Y}{},
+\end{align}
+
+where $\messB{W}{X'}{}$ denotes the precision matrix with the following equality
+
+\begin{equation*}
+	\messF{W}{X}{}^{-1} = \messF{V}{X}{},
+\end{equation*}
+
+and $\messB{W}{X'}{}\messB{m}{X'}{}$ denotes the weighted mean. The set of equations in (\ref{eq: input}) can be simplified by using the set of equations in (\ref{eq: noisy samples})
+
+\begin{equation*}
+	\messB{W}{X'}{} = \mat{C}^T\frac{1}{\sigma^2}\mat{C}  \qquad \messB{W}{X'}{}\messB{m}{X'}{} = \mat{C}^T\frac{1}{\sigma^2}\tilde{y}_k.
+\end{equation*}
+
+
+Hence we can characterize $X_k$ by its precision matrix and its weighted mean (update rules). Note that $\mat{A}$ is an invertible matrix since 
+
+\begin{align}
+  \label{eq: precision matrix}
+  \messF{W}{X}{} &= \messF{W}{X''}{} + \messB{W}{X'}{} \\
+  &= \left(\mat{A}\messF{V}{X}{-1}\mat{A}^T\right)^{-1} + \mat{C}^T\frac{1}{\sigma^2}\mat{C} \\
+  & = \left(\mat{A}\messF{V}{X}{-1}\mat{A}^T\right)^{-1} + \frac{1}{\sigma^2}\mat{C}^T\mat{C} \\
+  & = \mat{A}^{-T}\messF{W}{X}{-1}\mat{A}^{-1} + \frac{\mat{C}^T\mat{C}}{\sigma^2},
+\end{align}
+
+\begin{align}
+  \label{eq: weighted mean}
+  \messF{W}{X}{}\messF{m}{X}{} &= \messF{W}{X''}{}\messF{m}{X''}{} + \messF{W}{X'}{}\messF{m}{X'}{} = \\
+  &= \left(\mat{A}\messF{V}{X}{-1}\mat{A}^T\right)^{-1}\mat{A}\messF{m}{X}{-1} + \mat{C}^T\frac{1}{\sigma^2}\tilde{y}_k \\
+  &= \left(\messF{V}{X}{-1}\mat{A}^T\right)^{-1}\underbrace{\mat{A}^{-1}\mat{A}}_{\mat{I}}\messF{m}{X}{-1} + \mat{C}^T\frac{1}{\sigma^2}\tilde{y}_k \\
+  &= \mat{A}^{-T}\messF{W}{X}{-1}\messF{m}{X}{-1} + \frac{\mat{C}^T}{\sigma^2}\tilde{y}_k.
+\end{align}
+
+In a next step we try to get to an expression for the covariance matrix and the mean vector by using the Matrix Inversion Lemma (\ref{eq: matrix inversion lemma})
+ 
+\begin{align}
+	\label{eq: matrix inversion lemma}
+	\left(\mat{B} + \mat{DEF}\right)^{-1} = \mat{B}^{-1} - \mat{B}^{-1}\mat{D}\left(\mat{E}^{-1} + \mat{F}\mat{B}^{-1}\mat{D}\right)^{-1}\mat{F}\mat{B}^{-1},
+\end{align}
+
+we get the following assignments for equation (\ref{eq: precision matrix})
+
+\begin{align}
+	\label{eq: assignments MIL}
+	& \mat{B} = \left(\mat{A}^{-1}\right)^T\messF{W}{X}{-1}\mat{A}^{-1}, \\
+	& \mat{D} = \mat{C}^T, \\
+	& \mat{E} = \frac{1}{\sigma^2}, \\
+	& \mat{F} = \mat{C}.
+\end{align}
+
+
+\chapter*{Amplitude and Phase estimate}
+
+
+
+\chapter*{Independence of State Update from Noise}
+By induction and for a time index $k>0$, the precision matrix update rule in eq. (\ref{eq: precision matrix}) can be written as follows
+
+\begin{equation}
+	\label{eq: update rule}
+	\messF{W}{X}{} = \sum_{j=0}^{k-1}\left(\mat{A}^{-T}\right)^j\frac{\mat{C}^T\mat{C}}{\sigma^2}\left(\mat{A}^{-1}\right)^{j}.
+\end{equation}
+
+Since $\mat{A}$ is a rotation matrix it can be diagonalized in an orthonormal basis in $\mathcal{C}$ such that
+
+\begin{equation}
+	\mat{A} = \mat{Q\Lambda}\mat{Q}^H,
+\end{equation}
+
+where $\mat{Q}$ is a unitary matrix and $\mat{Q}^H$ denotes the its Hermitian transpose. The decomposition of the matrix $\mat{A}$ can be done as follows
+
+\begin{align*}
+	&\mat{Q} = \frac{1}{\sqrt{2}}
+		\begin{bmatrix}
+			1 & 1 \\
+			-i & i
+		\end{bmatrix},
+	\\
+	&\mat{\Lambda} = 
+		\begin{bmatrix}
+			\exp{(i\omega_0)} & 0 \\
+			0 & \exp{(-i\omega_0)}
+		\end{bmatrix}.
+\end{align*}
+
+In a next step, the new expression for $\mat{A}$ can be inserted into equation (\ref{eq: update rule}) \cite{ST:Malmberg}
+
+\begin{align}
+	\nonumber
+	\messF{W}{X}{} &= \sum_{j=0}^{k-1}\left(\left(\left(\mat{Q\Lambda}\mat{Q}^H\right)^H\right)^{-j}\frac{\mat{C}^T\mat{C}}{\sigma^2}\left(\mat{Q\Lambda}\mat{Q}^H\right)^{-j}\right) \\
+	\label{eq: update rule, unitary Q}
+	&= \frac{1}{\sigma^2}\sum_{j=0}^{k-1}\left(\mat{Q}\left(\bar{\Lambda}\right)^{-j}\mat{Q}^H
+		\begin{bmatrix}
+			1 & 0 \\
+			0 & 0
+		\end{bmatrix}
+		\mat{Q}\mat{\Lambda}^{-j}\mat{Q}^H\right)
+	\\
+	\nonumber
+	&= \frac{1}{\sigma^2}\mat{Q}\sum_{j=0}^{k-1}\left(\mat{Q}\left(\bar{\Lambda}\right)^{-j}
+		\begin{bmatrix}
+			1 & 0 \\
+			0 & 0
+		\end{bmatrix}
+		\mat{\Lambda}^{-j}\right)\mat{Q}^H
+	\\
+	\nonumber
+	&= \frac{1}{\sigma^2}\mat{Q}\sum_{j=0}^{k-1}\left(\mat{Q}
+		\begin{bmatrix}
+			\exp{(i\omega_0j)} & 0 \\
+			0 & \exp{(-i\omega_0j)}
+		\end{bmatrix}
+		\begin{bmatrix}
+			1 & 0 \\
+			0 & 0
+		\end{bmatrix}
+		\begin{bmatrix}
+			\exp{(-i\omega_0j)} & 0 \\
+			0 & \exp{(i\omega_0j)}
+		\end{bmatrix}
+		\right)\mat{Q}^H
+	\\
+	\nonumber
+	&= \frac{1}{\sigma^2}\mat{Q}\sum_{j=0}^{k-1}\left(\mat{Q}
+		\begin{bmatrix}
+			\exp{(i\omega_0j)} & \exp{(i\omega_0j)} \\
+			\exp{(-i\omega_0j)} & \exp{(-i\omega_0j)}
+		\end{bmatrix}
+		\begin{bmatrix}
+			\exp{(-i\omega_0j)} & 0 \\
+			0 & \exp{(i\omega_0j)}
+		\end{bmatrix}
+		\right)\mat{Q}^H
+	\\
+	\nonumber
+	&= \frac{1}{\sigma^2}\mat{Q}\sum_{j=0}^{k-1}\left(\mat{Q}
+		\begin{bmatrix}
+			\exp{(i\omega_0j)} & 0 \\
+			0 & \exp{(-i\omega_0j)}
+		\end{bmatrix}
+		\begin{bmatrix}
+			1 & 0 \\
+			0 & 0
+		\end{bmatrix}
+		\begin{bmatrix}
+			\exp{(-i\omega_0j)} & 0 \\
+			0 & \exp{(i\omega_0j)}
+		\end{bmatrix}
+		\right)\mat{Q}^H
+	\\
+	\nonumber
+	&= \frac{1}{\sigma^2}\mat{Q}\sum_{j=0}^{k-1}\left(\mat{Q}
+		\begin{bmatrix}
+			1 & \exp{(2i\omega_0j)} \\
+			\exp{(2i\omega_0j)} & 1
+		\end{bmatrix}
+		\right)\mat{Q}^H
+	\\
+	\nonumber
+	&= \frac{1}{\sigma^2}\mat{Q}\sum_{j=0}^{k-1}\left(\mat{Q}
+		\begin{bmatrix}
+			1 & 0 \\
+			0 & 1
+		\end{bmatrix} +
+		\begin{bmatrix}
+			0 & \exp{(2i\omega_0j)} \\
+			\exp{(2i\omega_0j)} & 0
+		\end{bmatrix}
+		\right)\mat{Q}^H
+	\\
+	\label{eq: update rule, orthogonal basis}
+	&= \frac{1}{\sigma^2}\mat{Q}\sum_{j=0}^{k-1}\left(\mat{Q}
+		\begin{bmatrix}
+			1 & 0 \\
+			0 & 1
+		\end{bmatrix} +
+		\begin{bmatrix}
+			0 & \exp{(2i\omega_0j)} \\
+			\exp{(2i\omega_0j)} & 0
+		\end{bmatrix}
+		\right)\mat{Q}^H
+\end{align}
+
+where equation (\ref{eq: update rule, unitary Q}) follows from the unitary property of $\mat{Q}$. By using the following geometric sums
+
+\begin{align}
+	& \sum_{j=0}^{k-1}\exp{2i\omega_0j} = \frac{1-\exp{2i\omega_0k}}{1-\exp{2i\omega_0}}
+\end{align}
+
+
+
+\chapter*{Cost function}
+\cite{SIP}
+\clearpage
+
+% Bibliography
+\bibliographystyle{unsrt} % bibliography style in order of first citation
+%\bibliographystyle{splncs}
+\bibliography{references}
+
+\end{document}
