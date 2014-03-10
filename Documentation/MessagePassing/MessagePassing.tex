@@ -152,10 +152,10 @@ In a next step we try to get to an expression for the covariance matrix and the 
  
 \begin{align}
 	\label{eq: matrix inversion lemma}
-	\left(\mat{B} + \mat{DEF}\right)^{-1} = \mat{B}^{-1} - \mat{B}^{-1}\mat{D}\left(\mat{E}^{-1} + \mat{F}\mat{B}^{-1}\mat{D}\right)^{-1}\mat{F}\mat{B}^{-1},
+	\left(\mat{B} + \mat{DEF}\right)^{-1} = \mat{B}^{-1} - \mat{B}^{-1}\mat{D}\left(\mat{E}^{-1} + \mat{F}\mat{B}^{-1}\mat{D}\right)^{-1}\mat{F}\mat{B}^{-1}.
 \end{align}
 
-we get the following assignments for equation (\ref{eq: precision matrix})
+Thus we get the following assignments for the equation (\ref{eq: precision matrix})
 
 \begin{align}
 	\label{eq: assignments MIL}
@@ -165,6 +165,37 @@ we get the following assignments for equation (\ref{eq: precision matrix})
 	& \mat{F} = \mat{C}.
 \end{align}
 
+Finally it follows the update rules for the covariance matrix and the mean vector
+
+\begin{align}
+	\label{eq: update rule, covariance}
+	\messF{V}{X}{} &= \left[\mat{A}^{-T}\messF{W}{X}{-1}\mat{A}^{-1}\right] \\
+	\nonumber
+	&= \left(\messF{W}{X}{-1}\mat{A}^{-1}\right)^{-1}\mat{A}^T \\
+	\nonumber
+	&= \mat{A}\messF{V}{X}{-1}\mat{A}^T - \mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^T\mat{GCA}\messF{V}{X}{-1}\mat{A}^T
+\end{align}
+
+\begin{align}
+	\label{eq: update rule, covariance}
+	\messF{V}{X}{} &= \left[\mat{A}^{-T}\messF{W}{X}{-1}\mat{A}^{-1}\right] \\
+	\nonumber
+	&= \left(\messF{W}{X}{-1}\mat{A}^{-1}\right)^{-1}\mat{A}^T \\
+	\nonumber
+	&= \mat{A}\messF{V}{X}{-1}\mat{A}^T - \mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^T\mat{GCA}\messF{V}{X}{-1}\mat{A}^T
+\end{align}
+
+with matrix $\mat{G}$ given as follows
+
+\begin{equation*}
+	\mat{G} = \left(\sigma^2 + \mat{CA}\messF{V}{X}{-1}\mat{A}^T\mat{C}^{T}\right).
+\end{equation*}
+
+%and where the last step (see equation (\ref{eq: update rule, orthogonal matrix})) follows from the fact that $\mat{A}$ is the rotation matrix and therefore an orthogonal matrix, i.e., its transpose is equal to its inverse
+%
+%\begin{equation*}
+%	\mat{A}^T = \mat{A}^{-1}.
+%\end{equation*}
 
 \chapter*{Amplitude and Phase estimate}
 
@@ -222,7 +253,7 @@ In a next step, the new expression for $\mat{A}$ can be inserted into equation (
 		\mat{\Lambda}^{-j}\right)\mat{Q}^H
 	\\
 	\nonumber
-	&= \frac{1}{\sigma^2}\mat{Q}\sum_{j=0}^{k-1}\left(\mat{Q}
+	&= \frac{1}{\sigma^2}\mat{Q}\sum_{j=0}^{k-1}\left(
 		\begin{bmatrix}
 			\exp{(i\omega_0j)} & 0 \\
 			0 & \exp{(-i\omega_0j)}
@@ -238,7 +269,7 @@ In a next step, the new expression for $\mat{A}$ can be inserted into equation (
 		\right)\mat{Q}^H
 	\\
 	\nonumber
-	&= \frac{1}{\sigma^2}\mat{Q}\sum_{j=0}^{k-1}\left(\mat{Q}
+	&= \frac{1}{\sigma^2}\mat{Q}\sum_{j=0}^{k-1}\left(
 		\begin{bmatrix}
 			\exp{(i\omega_0j)} & \exp{(i\omega_0j)} \\
 			\exp{(-i\omega_0j)} & \exp{(-i\omega_0j)}
@@ -250,7 +281,7 @@ In a next step, the new expression for $\mat{A}$ can be inserted into equation (
 		\right)\mat{Q}^H
 	\\
 	\nonumber
-	&= \frac{1}{\sigma^2}\mat{Q}\sum_{j=0}^{k-1}\left(\mat{Q}
+	&= \frac{1}{\sigma^2}\mat{Q}\sum_{j=0}^{k-1}\left(
 		\begin{bmatrix}
 			\exp{(i\omega_0j)} & 0 \\
 			0 & \exp{(-i\omega_0j)}
@@ -266,45 +297,116 @@ In a next step, the new expression for $\mat{A}$ can be inserted into equation (
 		\right)\mat{Q}^H
 	\\
 	\nonumber
-	&= \frac{1}{\sigma^2}\mat{Q}\sum_{j=0}^{k-1}\left(\mat{Q}
+	&= \frac{1}{\sigma^2}\mat{Q}\sum_{j=0}^{k-1}\left(
 		\begin{bmatrix}
 			1 & \exp{(2i\omega_0j)} \\
-			\exp{(2i\omega_0j)} & 1
+			\exp{(-2i\omega_0j)} & 1
 		\end{bmatrix}
 		\right)\mat{Q}^H
 	\\
 	\nonumber
-	&= \frac{1}{\sigma^2}\mat{Q}\sum_{j=0}^{k-1}\left(\mat{Q}
+	&= \frac{1}{\sigma^2}\mat{Q}\sum_{j=0}^{k-1}\left(
 		\begin{bmatrix}
 			1 & 0 \\
 			0 & 1
 		\end{bmatrix} +
 		\begin{bmatrix}
 			0 & \exp{(2i\omega_0j)} \\
-			\exp{(2i\omega_0j)} & 0
+			\exp{(-2i\omega_0j)} & 0
 		\end{bmatrix}
 		\right)\mat{Q}^H
 	\\
 	\label{eq: update rule, orthogonal basis}
-	&= \frac{1}{\sigma^2}\mat{Q}\sum_{j=0}^{k-1}\left(\mat{Q}
-		\begin{bmatrix}
-			1 & 0 \\
-			0 & 1
-		\end{bmatrix} +
+	&= \frac{1}{\sigma^2}\left(\frac{k}{2}\mat{I}_2 + \mat{Q}\sum_{j=0}^{k-1}\left(
 		\begin{bmatrix}
 			0 & \exp{(2i\omega_0j)} \\
-			\exp{(2i\omega_0j)} & 0
+			\exp{(-2i\omega_0j)} & 0
 		\end{bmatrix}
-		\right)\mat{Q}^H
+		\right)\mat{Q}^H\right)
 \end{align}
 
-where equation (\ref{eq: update rule, unitary Q}) follows from the unitary property of $\mat{Q}$. By using the following geometric sums
+where equation (\ref{eq: update rule, unitary Q}) follows from the unitary property of $\mat{Q}$. Then we rewrite the equation (\ref{eq: update rule, orthogonal basis}) as follows
 
 \begin{align}
-	& \sum_{j=0}^{k-1}\exp{2i\omega_0j} = \frac{1-\exp{2i\omega_0k}}{1-\exp{2i\omega_0}}
+	\label{eq: update rule, geometric series}
+	\sum_{j=0}^{k-1}\exp{\left(2i\omega_0j\right)} &= \frac{1-\exp{\left(2i\omega_0k\right)}}{1-\exp{\left(2i\omega_0\right)}} \\
+	\nonumber
+	&= \frac{\exp{\left(i\omega_0k\right)}\left(\exp{\left(i\omega_0k\right)}-\exp{\left(-i\omega_0k\right)}\right)}{\exp{\left(i\omega_0\right)}\left(\exp{\left(i\omega_0\right)}-\exp{\left(-i\omega_0\right)}\right)} \\
+	\label{eq: update rule, euler}
+	&= \exp{\left(i\omega_0\left(k-1\right)\right)}\frac{\sin{\left(\omega_0k\right)}}{\sin{\left(\omega_0\right)}}
 \end{align}
 
+where we used the geometric series in equation (\ref{eq: update rule, geometric series})
 
+\begin{equation*}
+	\sum_{n=0}^{n-1}ar^k = a\frac{1-r^n}{1-r},
+\end{equation*}
+
+and the following identity for the sine (derived from Euler's formula) (see equation (\ref{eq: update rule, euler}))
+
+\begin{equation*}
+	\sin{\left(x\right)} = \frac{1}{2i}\left(e^{ix} - e^-ix\right).
+\end{equation*}
+
+In a similar way we get the following equation
+
+\begin{equation*}
+	\sum_{j=0}^{k-1}\exp{\left(-2i\omega_0j\right)} = \exp{\left(-i\omega_0\left(k-1\right)\right)}\frac{\sin{\left(\omega_0k\right)}}{\sin{\left(\omega_0\right)}}.
+\end{equation*}
+
+Thus the second term in equation (\ref{eq: update rule, orthogonal basis}) can be written as
+
+\begin{align}
+	\nonumber
+	& \mat{Q}\sum_{j=0}^{k-1}\left(
+		\begin{bmatrix}
+			0 & \exp{(2i\omega_0j)} \\
+			\exp{(-2i\omega_0j)} & 0
+		\end{bmatrix}
+		\right)\mat{Q}^H
+	\\
+	\nonumber
+	&= \frac{\sin{\left(\omega_0k\right)}}{\sin{\left(\omega_0\right)}}
+		\begin{bmatrix}
+			1 & 1\\
+			-i & i
+		\end{bmatrix}
+		\begin{bmatrix}
+			0 & \exp{\left(i\omega_0\left(k-1\right)\right)} \\
+			\exp{\left(-i\omega_0\left(k-1\right)\right)} & 0
+		\end{bmatrix}
+		\begin{bmatrix}
+			1 & i \\
+			1 & -i
+		\end{bmatrix}
+	\\
+	\nonumber
+	&= \frac{\sin{\left(\omega_0k\right)}}{\sin{\left(\omega_0\right)}}
+		\begin{bmatrix}
+			\exp{\left(-i\omega_0\left(k-1\right)\right)} & \exp{\left(i\omega_0\left(k-1\right)\right)} \\
+			i\exp{\left(-i\omega_0\left(k-1\right)\right)} & -i\exp{\left(i\omega_0\left(k-1\right)\right)}
+		\end{bmatrix}
+		\begin{bmatrix}
+			1 & i \\
+			1 & -i
+		\end{bmatrix}
+	\\
+	\nonumber
+	&= \frac{\sin{\left(\omega_0k\right)}}{\sin{\left(\omega_0\right)}}
+		\begin{bmatrix}
+			2\cos{\left(\omega_0\left(k-1\right)\right)} & 2\sin{\left(\omega_0\left(k-1\right)\right)} \\
+			2\sin{\left(\omega_0\left(k-1\right)\right)} & -2\cos{\left(\omega_0\left(k-1\right)\right)}
+		\end{bmatrix}
+	\\
+	&= \frac{\sin{\left(\omega_0k\right)}}{\sin{\left(\omega_0\right)}}\mat{A}^{k-1}\mat{S}
+\end{align}
+
+where $\mat{S} = \begin{bmatrix} 1 & 0 \\
+0 & -1 \end{bmatrix}$. Finally the precision matrix is now reduced to
+
+\begin{equation*}
+	\sum_{j=0}^{k-1}\exp{\left(-2i\omega_0j\right)} = \exp{\left(-i\omega_0\left(k-1\right)\right)}\frac{\sin{\left(\omega_0k\right)}}{\sin{\left(\omega_0\right)}}.
+\end{equation*}
 
 \chapter*{Cost function}
 \cite{SIP}
