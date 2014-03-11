@@ -62,6 +62,10 @@
 \begin{document}
 \pagestyle{plain}
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%----------------------------------------       Update Rules     ---------------------------------------%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \chapter*{Derivation of Update Rules for Kalman-Based PLL}
 In Figure \ref{factor_graph} we can see a factor graph representation of a Kalman-based phase-locked loop. The matrices $A$, $C$ and the observed measurements $\tilde{y}_k$ are given as follows
 
@@ -164,7 +168,7 @@ In a next step we try to get to an expression for the covariance matrix and the 
 	\left(\mat{B} + \mat{DEF}\right)^{-1} = \mat{B}^{-1} - \mat{B}^{-1}\mat{D}\left(\mat{E}^{-1} + \mat{F}\mat{B}^{-1}\mat{D}\right)^{-1}\mat{F}\mat{B}^{-1}.
 \end{align}
 
-Thus we get the following assignments for the equation (\ref{eq: precision matrix})
+\noindent Thus we get the following assignments from equation (\ref{eq: precision matrix})
 
 \begin{align}
 	\label{eq: assignments MIL}
@@ -174,7 +178,7 @@ Thus we get the following assignments for the equation (\ref{eq: precision matri
 	& \mat{F} = \mat{C}.
 \end{align}
 
-Finally it follows the update rules for the covariance matrix and the mean vector
+Using these, the inverse of equation (\ref{eq: precision matrix}), i.e., the covariance matrix can be written as
 
 \begin{align}
 	\label{eq: update rule, covariance}
@@ -187,19 +191,46 @@ Finally it follows the update rules for the covariance matrix and the mean vecto
 	&= \mat{A}\messF{V}{X}{-1}\mat{A}^T - \mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^TG\mat{CA}\messF{V}{X}{-1}\mat{A}^T
 \end{align}
 
-\begin{align}
-	\label{eq: update rule, mean vector}
-	\messF{m}{X}{} &= ... \\
-	\nonumber
-	&= ... \\
-	&= \mat{A}\messF{m}{X}{-1} + \mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^TG\left(y_k-\mat{CA}\messF{m}{X}{-1}\right)
-\end{align}
-
-with matrix $\mat{G}$ given as follows
+\noindent where
 
 \begin{equation*}
-	G = \left(\sigma^2 + \mat{CA}\messF{V}{X}{-1}\mat{A}^T\mat{C}^{T}\right)^{-1}.
+	G := \left( \sigma^2 + \mat{C} \mat{A}\messF{V}{X}{-1} \mat{A}^T\mat{C}^T \right)^{-1}.
 \end{equation*}
+
+The mean vector $\messF{m}{X}{}$ can be retrieved by multiplying the matrix $\messF{V}{X}{}$ with (\ref{eq: weighted mean})
+
+\begin{align}
+	\label{eq: update rule, mean vector}
+	\messF{m}{X}{} &= \messF{V}{X}{} \left( \messF{W}{X}{}\messF{m}{X}{} \right) \\
+	&= \left(\mat{A}\messF{V}{X}{-1}\mat{A}^T - \mat{A}\messF{V}{X}{-1}\mat{A}^T \mat{C}^T G\mat{C}\mat{A}\messF{V}{X}{-1}\mat{A}^T\right) \\
+	&\nonumber \quad \cdot \left( \mat{A}^{-T}\messF{W}{X}{-1}\messF{m}{X}{-1} + \frac{\mat{C}^T}{\sigma^2}\tilde{y}_k \right) \\
+	&= \mat{A} \underbrace{\messF{V}{X}{-1}\mat{A}^T\mat{A}^{-T}\messF{W}{X}{-1}}_{\mat{I}} \messF{m}{X}{-1} - \mat{A}\messF{V}{X}{-1}\mat{A}^T \mat{C}^T G\mat{C}\mat{A}\underbrace{\messF{V}{X}{-1}\mat{A}^T\mat{A}^{-T}\messF{W}{X}{-1}}_{\mat{I}}\messF{m}{X}{-1} \\
+	&\nonumber \quad + \left(\mat{A}\messF{V}{X}{-1}\mat{A}^T - \mat{A}\messF{V}{X}{-1}\mat{A}^T \mat{C}^T G\mat{C}\mat{A}\messF{V}{X}{-1}\mat{A}^T\right) \cdot \left( \frac{\mat{C}^T}{\sigma^2}\tilde{y}_k \right) \\
+	&= \mat{A} \messF{m}{X}{-1} - \mat{A}\messF{V}{X}{-1}\mat{A}^T \mat{C}^T G\mat{C}\mat{A}\messF{m}{X}{-1} \\
+	&\nonumber \quad + \left(\mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^T - \mat{A}\messF{V}{X}{-1}\mat{A}^T \mat{C}^T G\mat{C}\mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^T\right) \cdot \left(\frac{1}{\sigma^2}\right) \cdot \tilde{y}_k \\
+	&= \mat{A} \messF{m}{X}{-1} - \left(\mat{A}\messF{V}{X}{-1}\mat{A}^T \mat{C}^T G\right)\mat{C}\mat{A}\messF{m}{X}{-1} \\
+	&\nonumber \quad + \left(\mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^T\right) \underbrace{\left(\mat{I} - G\mat{C}\mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^T\right) \cdot \left(\frac{1}{\sigma^2}\right)}_{=:\lambda} \cdot \tilde{y}_k.
+\end{align}
+
+The factor $\lambda$ can further be simplified to
+
+\begin{align}
+	\label{eq: lambda factor}
+	\lambda &:= \left(\mat{I} - G\mat{C}\mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^T\right) \cdot \left(\frac{1}{\sigma^2}\right) \\
+	&= \left(GG^{-1} - G\mat{C}\mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^T\right) \cdot \left(\frac{1}{\sigma^2}\right) \\
+	&= G\left(G^{-1} - \mat{C}\mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^T\right) \cdot \left(\frac{1}{\sigma^2}\right) \\
+	&= G\left(\sigma^2 + \underbrace{\mat{C} \mat{A}\messF{V}{X}{-1} \mat{A}^T\mat{C}^T - \mat{C}\mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^T}_{=0}\right) \cdot \left(\frac{1}{\sigma^2}\right) \\
+	&= G\left(\sigma^2 \right) \cdot \left(\frac{1}{\sigma^2}\right) \\
+	&= G,
+\end{align}
+
+where we used the fact, that $G^{-1} = \sigma^2 + \mat{C} \mat{A}\messF{V}{X}{-1} \mat{A}^T\mat{C}^T$. So we finally find the following condensed expression for $\messF{m}{X}{}$
+
+\begin{align}
+	\label{eq: update rule, mean vector}
+	\messF{m}{X}{} &= \mat{A} \messF{m}{X}{-1} - \left(\mat{A}\messF{V}{X}{-1}\mat{A}^T \mat{C}^T G\right)\mat{C}\mat{A}\messF{m}{X}{-1} + \left(\mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^T G\right) \tilde{y}_k \\
+	&= \mat{A} \messF{m}{X}{-1} + \mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^T G \left( \tilde{y}_k - \mat{C}\mat{A}\messF{m}{X}{-1} \right).
+\end{align}
 
 %and where the last step (see equation (\ref{eq: update rule, orthogonal matrix})) follows from the fact that $\mat{A}$ is the rotation matrix and therefore an orthogonal matrix, i.e., its transpose is equal to its inverse
 %
@@ -207,6 +238,10 @@ with matrix $\mat{G}$ given as follows
 %	\mat{A}^T = \mat{A}^{-1}.
 %\end{equation*}
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%------------------------------       Amplitude and Phase Estimate     -----------------------------%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \chapter*{Amplitude and Phase Estimate and Cost Function}
 The predicted signal estimate given the measurements ${y_1,...,y_{k-1}}$ can be written as
 
@@ -230,6 +265,9 @@ The difference between the corrected and the predicted estimate can be deduced a
 \end{align}
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%-----------------------       Independence of state update from noise     ------------------------%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \chapter*{Independence of State Update from Noise}
 By induction and for a time index $k>0$, the precision matrix update rule in eq. (\ref{eq: precision matrix}) can be written as follows
 
