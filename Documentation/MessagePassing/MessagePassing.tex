@@ -51,7 +51,8 @@
 
 %\newcommand{\vecbf}{\overrightarrow{\mathbf{\vec}}_{X_{k}}}
 %\newcommand{\messF}[1]{\vec{#1}_{X_{k}}}
-\newcommand{\messF}[3]{\vec{#1}_{{#2}_{k{#3}}}}
+%\newcommand{\messF}[3]{\vec{#1}_{{#2}_{k{#3}}}}
+\newcommand{\messF}[3]{\overrightarrow{#1}_{{#2}_{k{#3}}}}
 \newcommand{\messB}[3]{\overleftarrow{#1}_{{#2}_{k{#3}}}}
 
 \newcommand{\mat}[1]{\mathbf{#1}}
@@ -137,7 +138,8 @@ Hence we can characterize $X_k$ by its precision matrix and its weighted mean (u
   \messF{W}{X}{} &= \messF{W}{X''}{} + \messB{W}{X'}{} \\
   &= \left(\mat{A}\messF{V}{X}{-1}\mat{A}^T\right)^{-1} + \mat{C}^T\frac{1}{\sigma^2}\mat{C} \\
   & = \left(\mat{A}\messF{V}{X}{-1}\mat{A}^T\right)^{-1} + \frac{1}{\sigma^2}\mat{C}^T\mat{C} \\
-  & = \mat{A}^{-T}\messF{W}{X}{-1}\mat{A}^{-1} + \frac{\mat{C}^T\mat{C}}{\sigma^2},
+  & = \mat{A}^{-T}\messF{W}{X}{-1}\mat{A}^{-1} + \frac{\mat{C}^T\mat{C}}{\sigma^2}  \\
+  & = \mat{A}\messF{W}{X}{-1}\mat{A}^{-1} + \frac{\mat{C}^T\mat{C}}{\sigma^2},
 \end{align}
 
 \begin{align}
@@ -145,8 +147,15 @@ Hence we can characterize $X_k$ by its precision matrix and its weighted mean (u
   \messF{W}{X}{}\messF{m}{X}{} &= \messF{W}{X''}{}\messF{m}{X''}{} + \messF{W}{X'}{}\messF{m}{X'}{} = \\
   &= \left(\mat{A}\messF{V}{X}{-1}\mat{A}^T\right)^{-1}\mat{A}\messF{m}{X}{-1} + \mat{C}^T\frac{1}{\sigma^2}\tilde{y}_k \\
   &= \left(\messF{V}{X}{-1}\mat{A}^T\right)^{-1}\underbrace{\mat{A}^{-1}\mat{A}}_{\mat{I}}\messF{m}{X}{-1} + \mat{C}^T\frac{1}{\sigma^2}\tilde{y}_k \\
-  &= \mat{A}^{-T}\messF{W}{X}{-1}\messF{m}{X}{-1} + \frac{\mat{C}^T}{\sigma^2}\tilde{y}_k.
+  &= \mat{A}^{-T}\messF{W}{X}{-1}\messF{m}{X}{-1} + \frac{\mat{C}^T}{\sigma^2}\tilde{y}_k \\
+  &= \mat{A}\messF{W}{X}{-1}\messF{m}{X}{-1} + \frac{\mat{C}^T}{\sigma^2}\tilde{y}_k,
 \end{align}
+
+where the last step in the particular update equations follows from the fact that $\mat{A}$ is the rotation matrix and therefore an orthogonal matrix, i.e., its transpose is equal to its inverse
+
+\begin{equation*}
+	\mat{A}^T = \mat{A}^{-1}.
+\end{equation*}
 
 In a next step we try to get to an expression for the covariance matrix and the mean vector by using the Matrix Inversion Lemma (\ref{eq: matrix inversion lemma})
  
@@ -159,7 +168,7 @@ Thus we get the following assignments for the equation (\ref{eq: precision matri
 
 \begin{align}
 	\label{eq: assignments MIL}
-	& \mat{B} = \left(\mat{A}^{-1}\right)^T\messF{W}{X}{-1}\mat{A}^{-1}, \\
+	& \mat{B} = \mat{A}^{-T}\messF{W}{X}{-1}\mat{A}^{-1}, \\
 	& \mat{D} = \mat{C}^T, \\
 	& \mat{E} = \frac{1}{\sigma^2}, \\
 	& \mat{F} = \mat{C}.
@@ -169,26 +178,27 @@ Finally it follows the update rules for the covariance matrix and the mean vecto
 
 \begin{align}
 	\label{eq: update rule, covariance}
-	\messF{V}{X}{} &= \left[\mat{A}^{-T}\messF{W}{X}{-1}\mat{A}^{-1}\right] \\
+	\messF{V}{X}{} &= \left[\mat{A}^{-T}\messF{W}{X}{-1}\mat{A}^{-1} + \frac{\mat{C}^T\mat{C}}{\sigma^2}\right]^{-1} \\
 	\nonumber
-	&= \left(\messF{W}{X}{-1}\mat{A}^{-1}\right)^{-1}\mat{A}^T \\
+	&= \left(\mat{A}^{-T}\messF{W}{X}{-1}\mat{A}^{-1}\right)^{-1} \\
+	& - \left(\mat{A}^{-T}\messF{W}{X}{-1}\mat{A}^{-1}\right)^{-1}\mat{C}^T\left(\sigma^2 + \mat{C}\left(\mat{A}^{-T}\messF{W}{X}{-1}\mat{A}^{-1}\right)^{-1}\mat{C}^T\right)^{-1}\mat{C}\left(\mat{A}^{-T}\messF{W}{X}{-1}\mat{A}^{-1}\right)^{-1} \\
 	\nonumber
-	&= \mat{A}\messF{V}{X}{-1}\mat{A}^T - \mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^T\mat{GCA}\messF{V}{X}{-1}\mat{A}^T
+	&= \mat{A}\messF{V}{X}{-1}\mat{A}^T - \mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^T\underbrace{\left(\sigma^2 + \mat{C}\mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^T\right)^{-1}}_{=:G}\mat{C}\mat{A}\messF{V}{X}{-1}\mat{A}^T \\
+	&= \mat{A}\messF{V}{X}{-1}\mat{A}^T - \mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^TG\mat{CA}\messF{V}{X}{-1}\mat{A}^T
 \end{align}
 
 \begin{align}
-	\label{eq: update rule, covariance}
-	\messF{V}{X}{} &= \left[\mat{A}^{-T}\messF{W}{X}{-1}\mat{A}^{-1}\right] \\
+	\label{eq: update rule, mean vector}
+	\messF{m}{X}{} &= ... \\
 	\nonumber
-	&= \left(\messF{W}{X}{-1}\mat{A}^{-1}\right)^{-1}\mat{A}^T \\
-	\nonumber
-	&= \mat{A}\messF{V}{X}{-1}\mat{A}^T - \mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^T\mat{GCA}\messF{V}{X}{-1}\mat{A}^T
+	&= ... \\
+	&= \mat{A}\messF{m}{X}{-1} + \mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^TG\left(y_k-\mat{CA}\messF{m}{X}{-1}\right)
 \end{align}
 
 with matrix $\mat{G}$ given as follows
 
 \begin{equation*}
-	\mat{G} = \left(\sigma^2 + \mat{CA}\messF{V}{X}{-1}\mat{A}^T\mat{C}^{T}\right).
+	G = \left(\sigma^2 + \mat{CA}\messF{V}{X}{-1}\mat{A}^T\mat{C}^{T}\right)^{-1}.
 \end{equation*}
 
 %and where the last step (see equation (\ref{eq: update rule, orthogonal matrix})) follows from the fact that $\mat{A}$ is the rotation matrix and therefore an orthogonal matrix, i.e., its transpose is equal to its inverse
@@ -197,8 +207,27 @@ with matrix $\mat{G}$ given as follows
 %	\mat{A}^T = \mat{A}^{-1}.
 %\end{equation*}
 
-\chapter*{Amplitude and Phase estimate}
+\chapter*{Amplitude and Phase Estimate and Cost Function}
+The predicted signal estimate given the measurements ${y_1,...,y_{k-1}}$ can be written as
 
+\begin{equation*}
+	\tilde{y}_k = \mat{CA}\messF{m}{X}{-1},
+\end{equation*}
+
+and the corrected estimate given the measurements ${y_1,...,y_k}$ as
+
+\begin{equation*}
+	\hat{y}_k = \mat{C}\messF{m}{X}{-1}.
+\end{equation*}
+
+The difference between the corrected and the predicted estimate can be deduced as
+
+\begin{align}
+	\label{eq: }
+	\hat{y}_k - \tilde{y}_k &= \mat{C}\left(\messF{m}{X}{} - \mat{A}\messF{m}{X}{-1}\right) \\
+	&= \mat{C}\left(\messF{m}{X}{} - \messF{m}{X}{} + \underbrace{\mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^TG\left(y_k-\mat{CA}\messF{m}{X}{-1}\right)}_{=:\mat{B}_k}\right) \\
+	&= 
+\end{align}
 
 
 \chapter*{Independence of State Update from Noise}
@@ -366,7 +395,7 @@ Thus the second term in equation (\ref{eq: update rule, orthogonal basis}) can b
 		\right)\mat{Q}^H
 	\\
 	\nonumber
-	&= \frac{\sin{\left(\omega_0k\right)}}{\sin{\left(\omega_0\right)}}
+	&= \frac{\sin{\left(\omega_0k\right)}}{2\sin{\left(\omega_0\right)}}
 		\begin{bmatrix}
 			1 & 1\\
 			-i & i
@@ -381,7 +410,7 @@ Thus the second term in equation (\ref{eq: update rule, orthogonal basis}) can b
 		\end{bmatrix}
 	\\
 	\nonumber
-	&= \frac{\sin{\left(\omega_0k\right)}}{\sin{\left(\omega_0\right)}}
+	&= \frac{\sin{\left(\omega_0k\right)}}{2\sin{\left(\omega_0\right)}}
 		\begin{bmatrix}
 			\exp{\left(-i\omega_0\left(k-1\right)\right)} & \exp{\left(i\omega_0\left(k-1\right)\right)} \\
 			i\exp{\left(-i\omega_0\left(k-1\right)\right)} & -i\exp{\left(i\omega_0\left(k-1\right)\right)}
@@ -392,7 +421,7 @@ Thus the second term in equation (\ref{eq: update rule, orthogonal basis}) can b
 		\end{bmatrix}
 	\\
 	\nonumber
-	&= \frac{\sin{\left(\omega_0k\right)}}{\sin{\left(\omega_0\right)}}
+	&= \frac{\sin{\left(\omega_0k\right)}}{2\sin{\left(\omega_0\right)}}
 		\begin{bmatrix}
 			2\cos{\left(\omega_0\left(k-1\right)\right)} & 2\sin{\left(\omega_0\left(k-1\right)\right)} \\
 			2\sin{\left(\omega_0\left(k-1\right)\right)} & -2\cos{\left(\omega_0\left(k-1\right)\right)}
@@ -405,7 +434,16 @@ where $\mat{S} = \begin{bmatrix} 1 & 0 \\
 0 & -1 \end{bmatrix}$. Finally the precision matrix is now reduced to
 
 \begin{equation*}
-	\sum_{j=0}^{k-1}\exp{\left(-2i\omega_0j\right)} = \exp{\left(-i\omega_0\left(k-1\right)\right)}\frac{\sin{\left(\omega_0k\right)}}{\sin{\left(\omega_0\right)}}.
+	\messF{W}{X}{} = \frac{1}{2\sigma^2}\left(k\mat{I}_2 + \frac{\sin{\left(\omega_0k\right)}}{\sin{\left(\omega_0\right)}}\mat{A}^{k-1}\mat{S}\right)
+\end{equation*}
+
+\begin{align}
+	\messF{V}{X}{} &= \left(\messF{W}{X}{}\right)^{-1} \\
+	&= \frac{2\sigma^2}{k^2-\left(\frac{\sin{\left(\omega_0k\right)}}{\sin{\left(\omega_0\right)}}\right)^2}\left(k\mat{I}_2 - \frac{\sin{\left(\omega_0k\right)}}{\sin{\left(\omega_0\right)}}\mat{A}^{k-1}\mat{S}\right)
+\end{align}
+
+\begin{equation*}
+	\alpha_k = \mat{CB}_k = \frac{2\left(k-\frac{\sin{\left(\omega_0k\right)}}{\sin{\left(\omega_0\right)}}\cos{\left(\omega_0\left(k+1\right)\right)}\right)}{k^2-\left(\frac{\sin{\left(\omega_0k\right)}}{\sin{\left(\omega_0\right)}}\right)^2 + 2\left(k-\frac{\sin{\left(\omega_0k\right)}}{\sin{\left(\omega_0\right)}}\cos{\left(\omega_0\left(k+1\right)\right)}\right)}
 \end{equation*}
 
 \chapter*{Cost function}
