@@ -67,7 +67,7 @@
 %----------------------------------------       Update Rules     ---------------------------------------%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \chapter*{Derivation of Update Rules for Kalman-Based PLL}
-In Figure \ref{factor_graph} we can see a factor graph representation of a Kalman-based phase-locked loop. The matrices $A$, $C$ and the observed measurements $\tilde{y}_k$ are given as follows
+In Figure \ref{factor_graph} we can see a factor graph representation of a Kalman-based phase-locked loop. The matrices $A$, $C$ and the observed measurements $y_k$ are given as follows
 
 \begin{align*}
 	&\mat{A} = R(\omega_0) = 
@@ -81,7 +81,7 @@ In Figure \ref{factor_graph} we can see a factor graph representation of a Kalma
 			1 & 0
 		\end{bmatrix},
 	\\
-	&\tilde{y}_k = \cos({\omega_0k + \phi}) + Z_k, \qquad Z_k \overset{i.i.d}{\sim} \mathcal{N}\left(0, \sigma^2\right).
+	&Y_k = \cos({\omega_0k + \phi}) + Z_k, \qquad Z_k \overset{i.i.d}{\sim} \mathcal{N}\left(0, \sigma^2\right).
 \end{align*}
 
 Since $Z_k$ is a Gaussian random variable it follows that all random variables in the factor graph are Gaussian. The states $X_k$ can therefore be described by its mean vector and covariance matrix.
@@ -99,19 +99,19 @@ Since $Z_k$ is a Gaussian random variable it follows that all random variables i
 
 In every step $k$, a new sample $y_k$ is observed. Together with this sample and the previous state $X_{k-1}$, using Gaussian message passing, we can calculate the next state estimate $X_k$.
 
-We begin the message passing algorithm by computing the message given by the observed samples $\tilde{y}_k$ \cite{SIP}
+We begin the message passing algorithm by computing the message given by the observed samples $y_k$ \cite{SIP}
 
 \begin{align}
 	\label{eq: noise}
 	\messF{m}{Z}{} = 0  \qquad &\messF{V}{Z}{} = \sigma^2 \\
 	\label{eq: sample}
-	\messB{m}{\tilde{Y}}{} = \tilde{y}_k  \qquad &\messB{V}{\tilde{Y}}{} = 0.
+	\messB{m}{Y}{} = y_k  \qquad &\messB{V}{Y}{} = 0.
 \end{align}
 
 In a next step, we add the noise in Eq. (\ref{eq: noise}) to the observed sample in Eq. (\ref{eq: sample}) to get the message at $Y_k$
 \begin{align}
 	\label{eq: noisy samples}
-	\messB{m}{Y}{} = \tilde{y}_k \qquad &\messB{V}{Y}{} =  \sigma^2.
+	\messB{m}{Y}{} = y_k \qquad &\messB{V}{Y}{} =  \sigma^2.
 \end{align}
 
 With these results, we can now compute the messages at the equality constraint
@@ -131,7 +131,7 @@ where $\messB{W}{X'}{}$ denotes the precision matrix with the following equality
 and $\messB{W}{X'}{}\messB{m}{X'}{}$ denotes the weighted mean. The set of equations in (\ref{eq: input}) can be simplified by using the set of equations in (\ref{eq: noisy samples})
 
 \begin{equation*}
-	\messB{W}{X'}{} = \mat{C}^T\frac{1}{\sigma^2}\mat{C}  \qquad \messB{W}{X'}{}\messB{m}{X'}{} = \mat{C}^T\frac{1}{\sigma^2}\tilde{y}_k.
+	\messB{W}{X'}{} = \mat{C}^T\frac{1}{\sigma^2}\mat{C}  \qquad \messB{W}{X'}{}\messB{m}{X'}{} = \mat{C}^T\frac{1}{\sigma^2}y_k.
 \end{equation*}
 
 
@@ -149,10 +149,10 @@ Hence we can characterize $X_k$ by its precision matrix and its weighted mean (u
 \begin{align}
   \label{eq: weighted mean}
   \messF{W}{X}{}\messF{m}{X}{} &= \messF{W}{X''}{}\messF{m}{X''}{} + \messF{W}{X'}{}\messF{m}{X'}{} = \\
-  &= \left(\mat{A}\messF{V}{X}{-1}\mat{A}^T\right)^{-1}\mat{A}\messF{m}{X}{-1} + \mat{C}^T\frac{1}{\sigma^2}\tilde{y}_k \\
-  &= \left(\messF{V}{X}{-1}\mat{A}^T\right)^{-1}\underbrace{\mat{A}^{-1}\mat{A}}_{\mat{I}}\messF{m}{X}{-1} + \mat{C}^T\frac{1}{\sigma^2}\tilde{y}_k \\
-  &= \mat{A}^{-T}\messF{W}{X}{-1}\messF{m}{X}{-1} + \frac{\mat{C}^T}{\sigma^2}\tilde{y}_k \\
-  &= \mat{A}\messF{W}{X}{-1}\messF{m}{X}{-1} + \frac{\mat{C}^T}{\sigma^2}\tilde{y}_k,
+  &= \left(\mat{A}\messF{V}{X}{-1}\mat{A}^T\right)^{-1}\mat{A}\messF{m}{X}{-1} + \mat{C}^T\frac{1}{\sigma^2}y_k \\
+  &= \left(\messF{V}{X}{-1}\mat{A}^T\right)^{-1}\underbrace{\mat{A}^{-1}\mat{A}}_{\mat{I}}\messF{m}{X}{-1} + \mat{C}^T\frac{1}{\sigma^2}y_k \\
+  &= \mat{A}^{-T}\messF{W}{X}{-1}\messF{m}{X}{-1} + \frac{\mat{C}^T}{\sigma^2}y_k \\
+  &= \mat{A}\messF{W}{X}{-1}\messF{m}{X}{-1} + \frac{\mat{C}^T}{\sigma^2}y_k,
 \end{align}
 
 where the last step in the particular update equations follows from the fact that $\mat{A}$ is the rotation matrix and therefore an orthogonal matrix, i.e., its transpose is equal to its inverse
@@ -203,13 +203,13 @@ The mean vector $\messF{m}{X}{}$ can be retrieved by multiplying the matrix $\me
 	\label{eq: update rule, mean vector}
 	\messF{m}{X}{} &= \messF{V}{X}{} \left( \messF{W}{X}{}\messF{m}{X}{} \right) \\
 	&= \left(\mat{A}\messF{V}{X}{-1}\mat{A}^T - \mat{A}\messF{V}{X}{-1}\mat{A}^T \mat{C}^T G\mat{C}\mat{A}\messF{V}{X}{-1}\mat{A}^T\right) \\
-	&\nonumber \quad \cdot \left( \mat{A}^{-T}\messF{W}{X}{-1}\messF{m}{X}{-1} + \frac{\mat{C}^T}{\sigma^2}\tilde{y}_k \right) \\
+	&\nonumber \quad \cdot \left( \mat{A}^{-T}\messF{W}{X}{-1}\messF{m}{X}{-1} + \frac{\mat{C}^T}{\sigma^2}y_k \right) \\
 	&= \mat{A} \underbrace{\messF{V}{X}{-1}\mat{A}^T\mat{A}^{-T}\messF{W}{X}{-1}}_{\mat{I}} \messF{m}{X}{-1} - \mat{A}\messF{V}{X}{-1}\mat{A}^T \mat{C}^T G\mat{C}\mat{A}\underbrace{\messF{V}{X}{-1}\mat{A}^T\mat{A}^{-T}\messF{W}{X}{-1}}_{\mat{I}}\messF{m}{X}{-1} \\
-	&\nonumber \quad + \left(\mat{A}\messF{V}{X}{-1}\mat{A}^T - \mat{A}\messF{V}{X}{-1}\mat{A}^T \mat{C}^T G\mat{C}\mat{A}\messF{V}{X}{-1}\mat{A}^T\right) \cdot \left( \frac{\mat{C}^T}{\sigma^2}\tilde{y}_k \right) \\
+	&\nonumber \quad + \left(\mat{A}\messF{V}{X}{-1}\mat{A}^T - \mat{A}\messF{V}{X}{-1}\mat{A}^T \mat{C}^T G\mat{C}\mat{A}\messF{V}{X}{-1}\mat{A}^T\right) \cdot \left( \frac{\mat{C}^T}{\sigma^2}y_k \right) \\
 	&= \mat{A} \messF{m}{X}{-1} - \mat{A}\messF{V}{X}{-1}\mat{A}^T \mat{C}^T G\mat{C}\mat{A}\messF{m}{X}{-1} \\
-	&\nonumber \quad + \left(\mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^T - \mat{A}\messF{V}{X}{-1}\mat{A}^T \mat{C}^T G\mat{C}\mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^T\right) \cdot \left(\frac{1}{\sigma^2}\right) \cdot \tilde{y}_k \\
+	&\nonumber \quad + \left(\mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^T - \mat{A}\messF{V}{X}{-1}\mat{A}^T \mat{C}^T G\mat{C}\mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^T\right) \cdot \left(\frac{1}{\sigma^2}\right) \cdot y_k \\
 	&= \mat{A} \messF{m}{X}{-1} - \left(\mat{A}\messF{V}{X}{-1}\mat{A}^T \mat{C}^T G\right)\mat{C}\mat{A}\messF{m}{X}{-1} \\
-	&\nonumber \quad + \left(\mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^T\right) \underbrace{\left(\mat{I} - G\mat{C}\mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^T\right) \cdot \left(\frac{1}{\sigma^2}\right)}_{=:\lambda} \cdot \tilde{y}_k.
+	&\nonumber \quad + \left(\mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^T\right) \underbrace{\left(\mat{I} - G\mat{C}\mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^T\right) \cdot \left(\frac{1}{\sigma^2}\right)}_{=:\lambda} \cdot y_k.
 \end{align}
 
 The factor $\lambda$ can further be simplified to
@@ -228,8 +228,8 @@ where we used the fact, that $G^{-1} = \sigma^2 + \mat{C} \mat{A}\messF{V}{X}{-1
 
 \begin{align}
 	\label{eq: update rule, mean vector}
-	\messF{m}{X}{} &= \mat{A} \messF{m}{X}{-1} - \left(\mat{A}\messF{V}{X}{-1}\mat{A}^T \mat{C}^T G\right)\mat{C}\mat{A}\messF{m}{X}{-1} + \left(\mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^T G\right) \tilde{y}_k \\
-	&= \mat{A} \messF{m}{X}{-1} + \mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^T G \left( \tilde{y}_k - \mat{C}\mat{A}\messF{m}{X}{-1} \right).
+	\messF{m}{X}{} &= \mat{A} \messF{m}{X}{-1} - \left(\mat{A}\messF{V}{X}{-1}\mat{A}^T \mat{C}^T G\right)\mat{C}\mat{A}\messF{m}{X}{-1} + \left(\mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^T G\right) y_k \\
+	&= \mat{A} \messF{m}{X}{-1} + \mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^T G \left( y_k - \mat{C}\mat{A}\messF{m}{X}{-1} \right).
 \end{align}
 
 %and where the last step (see equation (\ref{eq: update rule, orthogonal matrix})) follows from the fact that $\mat{A}$ is the rotation matrix and therefore an orthogonal matrix, i.e., its transpose is equal to its inverse
@@ -258,11 +258,61 @@ and the corrected estimate given the measurements ${y_1,...,y_k}$ as
 The difference between the corrected and the predicted estimate can be deduced as
 
 \begin{align}
-	\label{eq: }
 	\hat{y}_k - \tilde{y}_k &= \mat{C}\left(\messF{m}{X}{} - \mat{A}\messF{m}{X}{-1}\right) \\
-	&= \mat{C}\left(\messF{m}{X}{} - \messF{m}{X}{} + \underbrace{\mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^TG\left(y_k-\mat{CA}\messF{m}{X}{-1}\right)}_{=:\mat{B}_k}\right) \\
-	&= 
+	\nonumber
+	&= \mat{C}\left(\messF{m}{X}{} - \messF{m}{X}{} + \underbrace{\mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^TG}_{=:\mat{B}_k}\left(y_k-\mat{CA}\messF{m}{X}{-1}\right)\right) \\
+	\label{eq: corrected-predicted estimate}
+	&= \mat{C}\mat{B}_k\left(y_k - \tilde{y}_k\right)
 \end{align}
+
+Since both the input signal and estimate is known to be sinusoidal the mean vector at time index k can be written as \cite{ST:Malmberg}
+
+\begin{equation*}
+	\messF{m}{X}{} = \hat{a}_k
+		\begin{bmatrix}
+			\cos{\left(\omega_0k + \hat{\phi}_k\right)} \\
+			\sin{\left(\omega_0k + \hat{\phi}_k\right)}
+		\end{bmatrix}
+\end{equation*}
+
+and subsequently
+
+\begin{align}
+	& y_k = a\cos{\left(\omega_0k + \phi\right)} + Z_k, \qquad Z_k \overset{i.i.d}{\sim} \mathcal{N}\left(0, \sigma^2\right), \\
+	& \tilde{y}_k = \hat{a}_{k-1}\cos{\left(\omega_0k + \hat{\phi}_{k-1}\right)}, \\
+	& \hat{y}_k = \hat{a}_k\cos{\left(\omega_0k + \hat{\phi}_k\right)}
+\end{align}
+
+
+Now we consider the scenario where only the phase is tracked and the amplitude is assumed to be $\hat{a}_k = \hat{a}_{k-1} = a_k$. If the phase estimation error is small such that $\left|\hat{\phi}_k - \phi\right|\ll1$ and $\left|\hat{\phi}_{k-1} - \phi\right|\ll1$, equation (\ref{eq: corrected-predicted estimate}) can be reduced to
+
+\begin{align}
+	a\left(\cos{\left(\omega_0k + \hat{\phi}_k\right)}- \cos{\left(\omega_0k + \hat{\phi}_{k-1}\right)}\right) &= 
+	a\alpha_k\left(\cos{\left(\omega_0k + \hat{\phi}_k\right)}- \cos{\left(\omega_0k + \hat{\phi}_{k-1}\right)}\right) \\
+	\sin{\left(\frac{\hat{\phi}_k - \hat{\phi}_{k-1}}{2}\right)} &\approx \alpha_k\sin{\left(\frac{\phi - \hat{\phi}_{k-1}}{2}\right)} \\
+	\label{eq: phase diff}
+	\hat{\phi}_k - \hat{\phi}_{k-1} &\approx \alpha_k\phi - \hat{\phi}_{k-1}.
+\end{align}
+
+Thus follows from equation (\ref{eq: phase diff}) that the phase update can be approximated as
+
+\begin{equation}
+	\hat{\phi}_k \approx \alpha_k\phi + \left(1-\alpha_k\right)\hat{\phi}_{k-1}.
+\end{equation}
+
+In a similar way, the amplitudes can be extracted under the condition that $\hat{\phi}_k = \hat{\phi}_{k-1} = \phi$
+
+\begin{align}
+	\hat{a}_k\cos{\left(\omega_0k + \phi\right)} - \hat{a}_{k-1}\cos{\left(\omega_ok + \phi\right)} &= \alpha_k\left(a\cos{\left(\omega_0k + \phi\right)} - \hat{a}_{k-1}\cos{\left(\omega_ok + \phi\right)}\right) \\
+	\hat{a}_k - \hat{a}_{k-1} &= \alpha_k\left(a-\hat{a}_{k-1}\right) \\
+	\hat{a}_k &= \alpha_ka + \left(1-\alpha_k\right)\hat{a}_{k-1}.
+\end{align}
+
+The cost function for the PLL then can be written as follows
+
+\begin{equation}
+	J = \mathbb{E}\left[\right]
+\end{equation}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -480,12 +530,13 @@ where $\mat{S} = \begin{bmatrix} 1 & 0 \\
 	&= \frac{2\sigma^2}{k^2-\left(\frac{\sin{\left(\omega_0k\right)}}{\sin{\left(\omega_0\right)}}\right)^2}\left(k\mat{I}_2 - \frac{\sin{\left(\omega_0k\right)}}{\sin{\left(\omega_0\right)}}\mat{A}^{k-1}\mat{S}\right)
 \end{align}
 
-\begin{equation*}
-	\alpha_k = \mat{CB}_k = \frac{2\left(k-\frac{\sin{\left(\omega_0k\right)}}{\sin{\left(\omega_0\right)}}\cos{\left(\omega_0\left(k+1\right)\right)}\right)}{k^2-\left(\frac{\sin{\left(\omega_0k\right)}}{\sin{\left(\omega_0\right)}}\right)^2 + 2\left(k-\frac{\sin{\left(\omega_0k\right)}}{\sin{\left(\omega_0\right)}}\cos{\left(\omega_0\left(k+1\right)\right)}\right)}
-\end{equation*}
+\begin{align}
+	\alpha_k &= \mat{CB}_k \\
+	&= \mat{C}\mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^TG \\
+	&= \mat{C}\mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^T\left( \sigma^2 + \mat{C} \mat{A}\messF{V}{X}{-1} \mat{A}^T\mat{C}^T \right)^{-1} \\
+	&= \frac{2\left(k-\frac{\sin{\left(\omega_0k\right)}}{\sin{\left(\omega_0\right)}}\cos{\left(\omega_0\left(k+1\right)\right)}\right)}{k^2-\left(\frac{\sin{\left(\omega_0k\right)}}{\sin{\left(\omega_0\right)}}\right)^2 + 2\left(k-\frac{\sin{\left(\omega_0k\right)}}{\sin{\left(\omega_0\right)}}\cos{\left(\omega_0\left(k+1\right)\right)}\right)}
+\end{align}
 
-\chapter*{Cost function}
-\cite{SIP}
 \clearpage
 
 % Bibliography
