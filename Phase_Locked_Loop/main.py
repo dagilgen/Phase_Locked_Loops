@@ -13,7 +13,7 @@ from matplotlib import rc
 
 def main():
     # Parameters
-    useCompleteModel = True             # Choose the message passing model
+    useCompleteModel = False             # Choose the message passing model
     nOfSamples = 2000
     T_s = 1.0/1000                      # Sampling Period [s]
     f_W = 2                             # Fundamental frequency [Hz]
@@ -21,8 +21,8 @@ def main():
     harmonicFrequencies = [1,2,3]           # Multiples of the fundamental frequency
     amplitudes = [4,4,4]                # Amplitudes of harmonics
     phi = [0,np.pi/3,np.pi/2]           # Phase shifts of harmonics
-    variance = 1                        # Noise variance
-    gamma = 0.9995                       # Forgetting factor
+    variance = 2                        # Noise variance
+    gamma = 0.999                       # Forgetting factor
     zeroThreshold = 1e-10               # Threshold below which numbers are treated as zero
     
     print("Status:\n")
@@ -62,6 +62,9 @@ def main():
     startTime = time.time()
     for k in range(1,nOfSamples+1):
         x_k = np.dot(A, x_k)
+        #if k%1000==0 and k<1001:            # Uncomment to insert abrupt signal change
+        #    B = np.array([[-1,0],[0,1]])
+        #    x_k = np.dot(B, x_k)
         y_k = np.dot(C, x_k)
         y[k-1] = y_k
         z_k = variance*np.random.randn()    # Add white Gaussian noise
@@ -84,7 +87,6 @@ def main():
             toggle = np.sign(sin_phase)
             phase[k-1,i] = cos_phase*toggle + (1-np.floor(np.abs(toggle)))*np.pi
         
-        #phase[k-1,0:nOfFrequencies] = util.phaseEstimator2(phase[k-1,0:nOfFrequencies],omega*np.array(harmonicFrequencies),T_s,k)
         W_x = W_x*gamma
         Wm_x = Wm_x*gamma   
         
@@ -176,5 +178,5 @@ def main():
     py.show()
         
 if __name__ == '__main__':
-    
+        
     main()

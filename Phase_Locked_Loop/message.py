@@ -165,4 +165,33 @@ def forwardMessagePassingSplit(A_inv, c, variance, y_tilde, W_x, Wm_x):
     Wm_xnew = np.dot(np.transpose(A_inv), Wm_x) + np.dot(np.transpose(C), y_tilde)/variance
     
     return [W_xnew, Wm_xnew]
+
+
+def steadyStatePrecisionMatrix(gamma, variance, omega):
+    '''For given system parameters, computes the steady state precision
+    matrix for the forward message passing algorithm.
+    
+    Inputs:    
+    
+    gamma : float
+        Decay factor of message passing algorithm
+    variance : float
+        Variance of the white Gaussian noise applied on the output
+    omega : float
+        Angular frequency of the state space system matrix
+    
+    
+    Outputs:
+    
+    W_ss : array-like
+        Steady state precision matrix
+    '''
+    
+
+    angularMatrix = np.array([[1-gamma*np.cos(2*omega),gamma*np.sin(2*omega)],[gamma*np.sin(2*omega),-1+gamma*np.cos(2*omega)]]);
+    secondTerm = angularMatrix/(1+gamma**2-2*gamma*np.cos(2*omega));
+    I = np.identity(2) 
+    W_ss = (I/(1-gamma)+secondTerm)/(2*variance);
+    
+    return W_ss
     

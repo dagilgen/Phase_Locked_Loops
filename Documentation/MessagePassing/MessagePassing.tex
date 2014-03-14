@@ -161,6 +161,21 @@ where the last step in the particular update equations follows from the fact tha
 	\mat{A}^T = \mat{A}^{-1}.
 \end{equation*}
 
+What is still missing with this implementation, is the ability of our estimator to react to abrupt signal changes, that are not modeled with our state space model. Such changes serve the purpose to physically transmit information with a waveform (e.g., Phase Shift Keying (PSK)). The ability is modeled with a so-called \emph{decay factor} $\gamma \in (0,1)$. In every iteration step $k$, $\messF{W}{X}{-1}$ is scaled with $\gamma$ which increases the uncertainty of  past estimates and therefore puts more emphasis on new measurements. The new update rules are then given by
+
+
+\begin{equation}
+  \label{eq: decay precision matrix}
+  \messF{W}{X}{} = \gamma \mat{A}\messF{W}{X}{-1}\mat{A}^{-1} + \frac{\mat{C}^T\mat{C}}{\sigma^2},
+\end{equation} 
+and
+
+\begin{equation}
+  \label{eq: decay weighted mean}
+  \messF{W}{X}{}\messF{m}{X}{} = \gamma \mat{A}\messF{W}{X}{-1}\messF{m}{X}{-1} + \frac{\mat{C}^T}{\sigma^2}y_k.
+\end{equation}
+
+
 In a next step we try to get to an expression for the covariance matrix and the mean vector by using the Matrix Inversion Lemma (\ref{eq: matrix inversion lemma})
  
 \begin{align}
@@ -168,11 +183,11 @@ In a next step we try to get to an expression for the covariance matrix and the 
 	\left(\mat{B} + \mat{DEF}\right)^{-1} = \mat{B}^{-1} - \mat{B}^{-1}\mat{D}\left(\mat{E}^{-1} + \mat{F}\mat{B}^{-1}\mat{D}\right)^{-1}\mat{F}\mat{B}^{-1}.
 \end{align}
 
-\noindent Thus we get the following assignments from equation (\ref{eq: precision matrix})
+\noindent Thus we get the following assignments from equation (\ref{eq: decay precision matrix})
 
 \begin{align}
 	\label{eq: assignments MIL}
-	& \mat{B} = \mat{A}^{-T}\messF{W}{X}{-1}\mat{A}^{-1}, \\
+	& \mat{B} = \gamma \mat{A}^{-T}\messF{W}{X}{-1}\mat{A}^{-1}, \\
 	& \mat{D} = \mat{C}^T, \\
 	& \mat{E} = \frac{1}{\sigma^2}, \\
 	& \mat{F} = \mat{C}.
@@ -182,34 +197,35 @@ Using these, the inverse of equation (\ref{eq: precision matrix}), i.e., the cov
 
 \begin{align}
 	\label{eq: update rule, covariance}
-	\messF{V}{X}{} &= \left[\mat{A}^{-T}\messF{W}{X}{-1}\mat{A}^{-1} + \frac{\mat{C}^T\mat{C}}{\sigma^2}\right]^{-1} \\
+	\messF{V}{X}{} &= \left[\gamma \mat{A}^{-T}\messF{W}{X}{-1}\mat{A}^{-1} + \frac{\mat{C}^T\mat{C}}{\sigma^2}\right]^{-1} \\
 	\nonumber
-	&= \left(\mat{A}^{-T}\messF{W}{X}{-1}\mat{A}^{-1}\right)^{-1} \\
-	& - \left(\mat{A}^{-T}\messF{W}{X}{-1}\mat{A}^{-1}\right)^{-1}\mat{C}^T\left(\sigma^2 + \mat{C}\left(\mat{A}^{-T}\messF{W}{X}{-1}\mat{A}^{-1}\right)^{-1}\mat{C}^T\right)^{-1}\mat{C}\left(\mat{A}^{-T}\messF{W}{X}{-1}\mat{A}^{-1}\right)^{-1} \\
+	&= \left(\gamma \mat{A}^{-T}\messF{W}{X}{-1}\mat{A}^{-1}\right)^{-1} \\
+	& - \left(\gamma \mat{A}^{-T}\messF{W}{X}{-1}\mat{A}^{-1}\right)^{-1}\mat{C}^T\left(\sigma^2 + \mat{C}\left(\gamma \mat{A}^{-T}\messF{W}{X}{-1}\mat{A}^{-1}\right)^{-1}\mat{C}^T\right)^{-1}\mat{C}\left(\gamma \mat{A}^{-T}\messF{W}{X}{-1}\mat{A}^{-1}\right)^{-1} \\
 	\nonumber
-	&= \mat{A}\messF{V}{X}{-1}\mat{A}^T - \mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^T\underbrace{\left(\sigma^2 + \mat{C}\mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^T\right)^{-1}}_{=:G}\mat{C}\mat{A}\messF{V}{X}{-1}\mat{A}^T \\
-	&= \mat{A}\messF{V}{X}{-1}\mat{A}^T - \mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^TG\mat{CA}\messF{V}{X}{-1}\mat{A}^T
+	&= \frac{1}{\gamma} \mat{A}\messF{V}{X}{-1}\mat{A}^T - \frac{1}{\gamma^2} \mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^T\left(\sigma^2 + \frac{1}{\gamma}  \mat{C}\mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^T\right)^{-1}\mat{C}\mat{A}\messF{V}{X}{-1}\mat{A}^T \\
+	&= \frac{1}{\gamma} \mat{A}\messF{V}{X}{-1}\mat{A}^T - \frac{1}{\gamma} \mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^T\underbrace{\left(\gamma \sigma^2 + \mat{C}\mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^T\right)^{-1}}_{=:G}\mat{C}\mat{A}\messF{V}{X}{-1}\mat{A}^T \\
+	&= \frac{1}{\gamma}  \mat{A}\messF{V}{X}{-1}\mat{A}^T - \frac{1}{\gamma}  \mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^TG\mat{CA}\messF{V}{X}{-1}\mat{A}^T
 \end{align}
 
 \noindent where
 
 \begin{equation*}
-	G := \left( \sigma^2 + \mat{C} \mat{A}\messF{V}{X}{-1} \mat{A}^T\mat{C}^T \right)^{-1}.
+	G := \left(\gamma \sigma^2 + \mat{C} \mat{A}\messF{V}{X}{-1} \mat{A}^T\mat{C}^T \right)^{-1}.
 \end{equation*}
 
-The mean vector $\messF{m}{X}{}$ can be retrieved by multiplying the matrix $\messF{V}{X}{}$ with (\ref{eq: weighted mean})
+The mean vector $\messF{m}{X}{}$ can be retrieved by multiplying the matrix $\messF{V}{X}{}$ with (\ref{eq: decay weighted mean})
 
 \begin{align}
 	\label{eq: update rule, mean vector}
 	\messF{m}{X}{} &= \messF{V}{X}{} \left( \messF{W}{X}{}\messF{m}{X}{} \right) \\
-	&= \left(\mat{A}\messF{V}{X}{-1}\mat{A}^T - \mat{A}\messF{V}{X}{-1}\mat{A}^T \mat{C}^T G\mat{C}\mat{A}\messF{V}{X}{-1}\mat{A}^T\right) \\
-	&\nonumber \quad \cdot \left( \mat{A}^{-T}\messF{W}{X}{-1}\messF{m}{X}{-1} + \frac{\mat{C}^T}{\sigma^2}y_k \right) \\
+	&= \frac{1}{\gamma} \left(\mat{A}\messF{V}{X}{-1}\mat{A}^T - \mat{A}\messF{V}{X}{-1}\mat{A}^T \mat{C}^T G\mat{C}\mat{A}\messF{V}{X}{-1}\mat{A}^T\right) \\
+	&\nonumber \quad \cdot \left(\gamma \mat{A}^{-T}\messF{W}{X}{-1}\messF{m}{X}{-1} + \frac{\mat{C}^T}{\sigma^2}y_k \right) \\
 	&= \mat{A} \underbrace{\messF{V}{X}{-1}\mat{A}^T\mat{A}^{-T}\messF{W}{X}{-1}}_{\mat{I}} \messF{m}{X}{-1} - \mat{A}\messF{V}{X}{-1}\mat{A}^T \mat{C}^T G\mat{C}\mat{A}\underbrace{\messF{V}{X}{-1}\mat{A}^T\mat{A}^{-T}\messF{W}{X}{-1}}_{\mat{I}}\messF{m}{X}{-1} \\
-	&\nonumber \quad + \left(\mat{A}\messF{V}{X}{-1}\mat{A}^T - \mat{A}\messF{V}{X}{-1}\mat{A}^T \mat{C}^T G\mat{C}\mat{A}\messF{V}{X}{-1}\mat{A}^T\right) \cdot \left( \frac{\mat{C}^T}{\sigma^2}y_k \right) \\
+	&\nonumber \quad + \frac{1}{\gamma} \left(\mat{A}\messF{V}{X}{-1}\mat{A}^T - \mat{A}\messF{V}{X}{-1}\mat{A}^T \mat{C}^T G\mat{C}\mat{A}\messF{V}{X}{-1}\mat{A}^T\right) \cdot \left( \frac{\mat{C}^T}{\sigma^2}y_k \right) \\
 	&= \mat{A} \messF{m}{X}{-1} - \mat{A}\messF{V}{X}{-1}\mat{A}^T \mat{C}^T G\mat{C}\mat{A}\messF{m}{X}{-1} \\
-	&\nonumber \quad + \left(\mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^T - \mat{A}\messF{V}{X}{-1}\mat{A}^T \mat{C}^T G\mat{C}\mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^T\right) \cdot \left(\frac{1}{\sigma^2}\right) \cdot y_k \\
+	&\nonumber \quad + \frac{1}{\gamma} \left(\mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^T - \mat{A}\messF{V}{X}{-1}\mat{A}^T \mat{C}^T G\mat{C}\mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^T\right) \cdot \left(\frac{1}{\sigma^2}\right) \cdot y_k \\
 	&= \mat{A} \messF{m}{X}{-1} - \left(\mat{A}\messF{V}{X}{-1}\mat{A}^T \mat{C}^T G\right)\mat{C}\mat{A}\messF{m}{X}{-1} \\
-	&\nonumber \quad + \left(\mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^T\right) \underbrace{\left(\mat{I} - G\mat{C}\mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^T\right) \cdot \left(\frac{1}{\sigma^2}\right)}_{=:\lambda} \cdot y_k.
+	&\nonumber \quad + \frac{1}{\gamma} \left(\mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^T\right) \underbrace{\left(\mat{I} - G\mat{C}\mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^T\right) \cdot \left(\frac{1}{\sigma^2}\right)}_{=:\lambda} \cdot y_k.
 \end{align}
 
 The factor $\lambda$ can further be simplified to
@@ -219,16 +235,16 @@ The factor $\lambda$ can further be simplified to
 	\lambda &:= \left(\mat{I} - G\mat{C}\mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^T\right) \cdot \left(\frac{1}{\sigma^2}\right) \\
 	&= \left(GG^{-1} - G\mat{C}\mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^T\right) \cdot \left(\frac{1}{\sigma^2}\right) \\
 	&= G\left(G^{-1} - \mat{C}\mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^T\right) \cdot \left(\frac{1}{\sigma^2}\right) \\
-	&= G\left(\sigma^2 + \underbrace{\mat{C} \mat{A}\messF{V}{X}{-1} \mat{A}^T\mat{C}^T - \mat{C}\mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^T}_{=0}\right) \cdot \left(\frac{1}{\sigma^2}\right) \\
-	&= G\left(\sigma^2 \right) \cdot \left(\frac{1}{\sigma^2}\right) \\
-	&= G,
+	&= G\left(\gamma \sigma^2 + \underbrace{\mat{C} \mat{A}\messF{V}{X}{-1} \mat{A}^T\mat{C}^T - \mat{C}\mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^T}_{=0}\right) \cdot \left(\frac{1}{\sigma^2}\right) \\
+	&= G\left(\gamma \sigma^2 \right) \cdot \left(\frac{1}{\sigma^2}\right) \\
+	&= \gamma G,
 \end{align}
 
-where we used the fact, that $G^{-1} = \sigma^2 + \mat{C} \mat{A}\messF{V}{X}{-1} \mat{A}^T\mat{C}^T$. So we finally find the following condensed expression for $\messF{m}{X}{}$
+where we used the fact, that $G^{-1} = \gamma \sigma^2 + \mat{C} \mat{A}\messF{V}{X}{-1} \mat{A}^T\mat{C}^T$. So we finally find the following condensed expression for $\messF{m}{X}{}$
 
 \begin{align}
 	\label{eq: update rule, mean vector}
-	\messF{m}{X}{} &= \mat{A} \messF{m}{X}{-1} - \left(\mat{A}\messF{V}{X}{-1}\mat{A}^T \mat{C}^T G\right)\mat{C}\mat{A}\messF{m}{X}{-1} + \left(\mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^T G\right) y_k \\
+	\messF{m}{X}{} &= \mat{A} \messF{m}{X}{-1} - \left(\mat{A}\messF{V}{X}{-1}\mat{A}^T \mat{C}^T G\right)\mat{C}\mat{A}\messF{m}{X}{-1} + \frac{1}{\gamma} \left(\mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^T \gamma G\right) y_k \\
 	&= \mat{A} \messF{m}{X}{-1} + \mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^T G \left( y_k - \mat{C}\mat{A}\messF{m}{X}{-1} \right).
 \end{align}
 
@@ -300,7 +316,8 @@ Thus follows from equation (\ref{eq: phase diff}) that the phase update can be a
 	\hat{\phi}_k \approx \alpha_k\phi + \left(1-\alpha_k\right)\hat{\phi}_{k-1}.
 \end{equation}
 
-In a similar way, the amplitudes can be extracted under the condition that $\hat{\phi}_k = \hat{\phi}_{k-1} = \phi$
+
+In a similar way, the amplitudes can be extracted under the condition that $\hat{\phi}_k = \hat{\phi}_{k-1} = \phi$
 
 \begin{align}
 	\hat{a}_k\cos{\left(\omega_0k + \phi\right)} - \hat{a}_{k-1}\cos{\left(\omega_ok + \phi\right)} &= \alpha_k\left(a\cos{\left(\omega_0k + \phi\right)} - \hat{a}_{k-1}\cos{\left(\omega_ok + \phi\right)}\right) \\
@@ -315,16 +332,45 @@ The cost function for the PLL then can be written as follows
 \end{equation}
 
 
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %-----------------------       Independence of state update from noise     ------------------------%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \chapter*{Independence of State Update from Noise}
-By induction and for a time index $k>0$, the precision matrix update rule in eq. (\ref{eq: precision matrix}) can be written as follows
+
+The update rules in Equations (\ref{eq: decay precision matrix}) and (\ref{eq: decay weighted mean}) are still iterative methods to compute the precision matrix and the weighted mean vector. Equations (\ref{eq: explicit precision matrix}) and (\ref{eq: explicit weighted mean}) provide explicit formulas to compute the $\messF{W}{X}{}$ and $\messF{W}{X}{}\messF{m}{X}{}$ respectively
 
 \begin{equation}
-	\label{eq: update rule}
-	\messF{W}{X}{} = \sum_{j=0}^{k-1}\left(\mat{A}^{-T}\right)^j\frac{\mat{C}^T\mat{C}}{\sigma^2}\left(\mat{A}^{-1}\right)^{j}.
+	\label{eq: explicit precision matrix}
+	\messF{W}{X}{} = \frac{1}{\sigma^2}\sum_{j=0}^{k-1}\gamma^{j}\left(\mat{A}^{-T}\right)^j\mat{C}^T\mat{C}\left(\mat{A}^{-1}\right)^{j},
 \end{equation}
+
+\begin{equation}
+	\label{eq: explicit weighted mean}
+	\messF{W}{X}{}\messF{m}{X}{} = \frac{1}{\sigma^2}\sum_{j=0}^{k-1}\gamma^{j} \left(\mat{A}^{-T}\right)^j\mat{C}^T y_{k-j}.
+\end{equation}
+
+The equality of (\ref{eq: explicit precision matrix}) and (\ref{eq: decay precision matrix}) as well as the equality of (\ref{eq: explicit weighted mean}) and (\ref{eq: decay weighted mean}) can easily be verified by induction. The independence of $\messF{m}{X}{}$ from the output noise variance $\sigma^2$ can now be proved by combining the two equations, which yields
+
+\begin{align}
+	\label{eq mean independence}
+	\messF{m}{X}{} &= \left( \messF{W}{X}{}\right)^{-1} \left(\messF{W}{X}{}\messF{m}{X}{}\right) \\
+	&= \left(\frac{1}{\sigma^2} \sum_{j=0}^{k-1}\gamma^{j}\left(\mat{A}^{-T}\right)^j\mat{C}^T\mat{C}\left(\mat{A}^{-1}\right)^{j}, \right)^{-1} \cdot \left( \frac{1}{\sigma^2}\sum_{j=0}^{k-1}\gamma^{j} \left(\mat{A}^{-T}\right)^j\mat{C}^T y_{k-j} \right) \\
+	&= \left(\sum_{j=0}^{k-1}\gamma^{j}\left(\mat{A}^{-T}\right)^j\mat{C}^T\mat{C}\left(\mat{A}^{-1}\right)^{j}, \right)^{-1} \cdot  \left(\sum_{j=0}^{k-1}\gamma^{j} \left(\mat{A}^{-T}\right)^j\mat{C}^T y_{k-j} \right)
+\end{align}
+
+As we can see, the noise $\sigma^2$ cancels out in the calculation above, i.e. our estimator does not need any information about the Gaussian noise process.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%------------------------------       Steady State Precision Matrix       -----------------------------%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter*{Steady State Precision Matrix}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%------------------------------------       Small decay factor      ------------------------------------%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section*{Decay factor $0<\gamma< 1$ }
 
 Since $\mat{A}$ is a rotation matrix it can be diagonalized in an orthonormal basis in $\mathcal{C}$ such that
 
@@ -332,7 +378,7 @@ Since $\mat{A}$ is a rotation matrix it can be diagonalized in an orthonormal ba
 	\mat{A} = \mat{Q\Lambda}\mat{Q}^H,
 \end{equation}
 
-where $\mat{Q}$ is a unitary matrix and $\mat{Q}^H$ denotes the its Hermitian transpose. The decomposition of the matrix $\mat{A}$ can be done as follows
+where $\mat{Q}$ is a unitary matrix and $\mat{Q}^H$ denotes  its Hermitian transpose. The decomposition of the matrix $\mat{A}$ can be done as follows
 
 \begin{align*}
 	&\mat{Q} = \frac{1}{\sqrt{2}}
@@ -348,137 +394,219 @@ where $\mat{Q}$ is a unitary matrix and $\mat{Q}^H$ denotes the its Hermitian tr
 		\end{bmatrix}.
 \end{align*}
 
-In a next step, the new expression for $\mat{A}$ can be inserted into equation (\ref{eq: update rule}) \cite{ST:Malmberg}
+
+In a next step, the new expression for $\mat{A}$ can be inserted into equation (\ref{eq: explicit precision matrix}) \cite{ST:Malmberg}
 
 \begin{align}
 	\nonumber
-	\messF{W}{X}{} &= \sum_{j=0}^{k-1}\left(\left(\left(\mat{Q\Lambda}\mat{Q}^H\right)^H\right)^{-j}\frac{\mat{C}^T\mat{C}}{\sigma^2}\left(\mat{Q\Lambda}\mat{Q}^H\right)^{-j}\right) \\
+	\messF{W}{X}{} &= \sum_{l=0}^{k-1}\left(\gamma^{l}\left(\left(\mat{Q\Lambda}\mat{Q}^H\right)^H\right)^{-l}\frac{\mat{C}^T\mat{C}}{\sigma^2}\left(\mat{Q\Lambda}\mat{Q}^H\right)^{-l}\right) \\
 	\label{eq: update rule, unitary Q}
-	&= \frac{1}{\sigma^2}\sum_{j=0}^{k-1}\left(\mat{Q}\left(\bar{\Lambda}\right)^{-j}\mat{Q}^H
+	&= \frac{1}{\sigma^2}\sum_{l=0}^{k-1}\left(\gamma^{l}\mat{Q}\left(\bar{\mat{\Lambda}}\right)^{-l}\mat{Q}^H
 		\begin{bmatrix}
 			1 & 0 \\
 			0 & 0
 		\end{bmatrix}
-		\mat{Q}\mat{\Lambda}^{-j}\mat{Q}^H\right)
+		\mat{Q}\mat{\Lambda}^{-l}\mat{Q}^H\right)
 	\\
 	\nonumber
-	&= \frac{1}{\sigma^2}\mat{Q}\sum_{j=0}^{k-1}\left(\mat{Q}\left(\bar{\Lambda}\right)^{-j}
+	&= \frac{1}{2\sigma^2}\mat{Q}\sum_{l=0}^{k-1}\left(\gamma^{l}\left(\bar{\mat{\Lambda}}\right)^{-l}
 		\begin{bmatrix}
-			1 & 0 \\
-			0 & 0
+			1 & 1 \\
+			1 & 1
 		\end{bmatrix}
-		\mat{\Lambda}^{-j}\right)\mat{Q}^H
+		\mat{\Lambda}^{-l}\right)\mat{Q}^H
 	\\
 	\nonumber
-	&= \frac{1}{\sigma^2}\mat{Q}\sum_{j=0}^{k-1}\left(
+	&= \frac{1}{2\sigma^2}\mat{Q}\sum_{l=0}^{k-1}\left(\gamma^{l}
 		\begin{bmatrix}
-			\exp{(i\omega_0j)} & 0 \\
-			0 & \exp{(-i\omega_0j)}
+			\exp{(i\omega_0l)} & 0 \\
+			0 & \exp{(-i\omega_0l)}
 		\end{bmatrix}
 		\begin{bmatrix}
-			1 & 0 \\
-			0 & 0
+			1 & 1 \\
+			1 & 1
 		\end{bmatrix}
 		\begin{bmatrix}
-			\exp{(-i\omega_0j)} & 0 \\
-			0 & \exp{(i\omega_0j)}
+			\exp{(-i\omega_0l)} & 0 \\
+			0 & \exp{(i\omega_0l)}
 		\end{bmatrix}
 		\right)\mat{Q}^H
 	\\
 	\nonumber
-	&= \frac{1}{\sigma^2}\mat{Q}\sum_{j=0}^{k-1}\left(
+	&= \frac{1}{2\sigma^2}\mat{Q}\sum_{l=0}^{k-1}\left( \gamma^{l}
 		\begin{bmatrix}
-			\exp{(i\omega_0j)} & \exp{(i\omega_0j)} \\
-			\exp{(-i\omega_0j)} & \exp{(-i\omega_0j)}
+			\exp{(i\omega_0l)} & \exp{(i\omega_0l)} \\
+			\exp{(-i\omega_0l)} & \exp{(-i\omega_0l)}
 		\end{bmatrix}
 		\begin{bmatrix}
-			\exp{(-i\omega_0j)} & 0 \\
-			0 & \exp{(i\omega_0j)}
-		\end{bmatrix}
-		\right)\mat{Q}^H
-	\\
-	\nonumber
-	&= \frac{1}{\sigma^2}\mat{Q}\sum_{j=0}^{k-1}\left(
-		\begin{bmatrix}
-			\exp{(i\omega_0j)} & 0 \\
-			0 & \exp{(-i\omega_0j)}
-		\end{bmatrix}
-		\begin{bmatrix}
-			1 & 0 \\
-			0 & 0
-		\end{bmatrix}
-		\begin{bmatrix}
-			\exp{(-i\omega_0j)} & 0 \\
-			0 & \exp{(i\omega_0j)}
+			\exp{(-i\omega_0l)} & 0 \\
+			0 & \exp{(i\omega_0l)}
 		\end{bmatrix}
 		\right)\mat{Q}^H
 	\\
 	\nonumber
-	&= \frac{1}{\sigma^2}\mat{Q}\sum_{j=0}^{k-1}\left(
+	&= \frac{1}{2\sigma^2}\mat{Q}\sum_{l=0}^{k-1}\left(\gamma^{l}
 		\begin{bmatrix}
-			1 & \exp{(2i\omega_0j)} \\
-			\exp{(-2i\omega_0j)} & 1
+			1 & \exp{(2i\omega_0l)} \\
+			\exp{(-2i\omega_0l)} & 1
 		\end{bmatrix}
 		\right)\mat{Q}^H
 	\\
 	\nonumber
-	&= \frac{1}{\sigma^2}\mat{Q}\sum_{j=0}^{k-1}\left(
+	&= \frac{1}{2\sigma^2}\mat{Q}\sum_{l=0}^{k-1}\left(\gamma^{l}
 		\begin{bmatrix}
 			1 & 0 \\
 			0 & 1
-		\end{bmatrix} +
+		\end{bmatrix} + \gamma^{l}
 		\begin{bmatrix}
-			0 & \exp{(2i\omega_0j)} \\
-			\exp{(-2i\omega_0j)} & 0
+			0 & \exp{(2i\omega_0l)} \\
+			\exp{(-2i\omega_0l)} & 0
 		\end{bmatrix}
 		\right)\mat{Q}^H
 	\\
 	\label{eq: update rule, orthogonal basis}
-	&= \frac{1}{\sigma^2}\left(\frac{k}{2}\mat{I}_2 + \mat{Q}\sum_{j=0}^{k-1}\left(
+	&= \frac{1}{2\sigma^2}\left(\frac{1-\gamma^k}{1-\gamma}\mat{I}_2 + \mat{Q}\sum_{l=0}^{k-1}\left(\gamma^{l}
 		\begin{bmatrix}
-			0 & \exp{(2i\omega_0j)} \\
-			\exp{(-2i\omega_0j)} & 0
+			0 & \exp{(2i\omega_0l)} \\
+			\exp{(-2i\omega_0l)} & 0
 		\end{bmatrix}
-		\right)\mat{Q}^H\right)
+		\right)\mat{Q}^H\right) ,
 \end{align}
 
-where equation (\ref{eq: update rule, unitary Q}) follows from the unitary property of $\mat{Q}$. Then we rewrite the equation (\ref{eq: update rule, orthogonal basis}) as follows
-
-\begin{align}
-	\label{eq: update rule, geometric series}
-	\sum_{j=0}^{k-1}\exp{\left(2i\omega_0j\right)} &= \frac{1-\exp{\left(2i\omega_0k\right)}}{1-\exp{\left(2i\omega_0\right)}} \\
-	\nonumber
-	&= \frac{\exp{\left(i\omega_0k\right)}\left(\exp{\left(i\omega_0k\right)}-\exp{\left(-i\omega_0k\right)}\right)}{\exp{\left(i\omega_0\right)}\left(\exp{\left(i\omega_0\right)}-\exp{\left(-i\omega_0\right)}\right)} \\
-	\label{eq: update rule, euler}
-	&= \exp{\left(i\omega_0\left(k-1\right)\right)}\frac{\sin{\left(\omega_0k\right)}}{\sin{\left(\omega_0\right)}}
-\end{align}
-
-where we used the geometric series in equation (\ref{eq: update rule, geometric series})
+\noindent where equation (\ref{eq: update rule, unitary Q}) follows from the unitary property of $\mat{Q}$. Moreover, we used the geometric series in equation (\ref{eq: update rule, orthogonal basis}) 
 
 \begin{equation*}
 	\sum_{n=0}^{n-1}ar^k = a\frac{1-r^n}{1-r},
 \end{equation*}
 
-and the following identity for the sine (derived from Euler's formula) (see equation (\ref{eq: update rule, euler}))
+\noindent where we implicitly assumed that $0 < \gamma < 1$. Now we rewrite equation (\ref{eq: update rule, orthogonal basis}) as follows
+
+\begin{align}
+	\label{eq: update rule, geometric series}
+	\sum_{l=0}^{k-1}\gamma^{l}\exp{\left(2i\omega_0l\right)} &= \sum_{l=0}^{k-1}\left(\gamma \exp{\left(2i\omega_0\right)}\right)^l \\
+	\nonumber
+	&= \frac{1-\gamma^{k}\exp{\left(2i\omega_0k\right)}}{1-\gamma \exp{\left(2i\omega_0\right)}} \\
+	\nonumber
+	&= \frac{\left(1-\gamma^{k}\right)+\gamma^{k}-\gamma^{k}\exp{\left(2i\omega_0k\right)}}{\left(1-\gamma\right)+\gamma-\gamma \exp{\left(2i\omega_0\right)}} \\
+	\nonumber
+	&= \frac{\left(1-\gamma^{k}\right)-\gamma^{k}\exp{\left(i\omega_0k\right)}\left(\exp{\left(i\omega_0k\right)}-\exp{\left(-i\omega_0k\right)}\right)}{\left(1-\gamma\right) - \gamma \exp{\left(i\omega_0\right)}\left(\exp{\left(i\omega_0\right)}-\exp{\left(-i\omega_0\right)}\right)} \\
+	\label{eq: update rule, positive euler}
+	&= \frac{\left(1-\gamma^{k}\right)-2\gamma^{k} \exp{\left(i\omega_0k\right)}\sin\left(\omega_0 k\right)}{\left(1-\gamma\right) - 2\gamma \exp{\left(i\omega_0\right)}\sin\left(\omega_0\right)}
+\end{align}
+
+\noindent where we made again use of the geometric series and the following identity for the sine (derived from Euler's formula) (see equation (\ref{eq: update rule, positive euler}))
 
 \begin{equation*}
-	\sin{\left(x\right)} = \frac{1}{2i}\left(e^{ix} - e^-ix\right).
+	\sin{\left(x\right)} = \frac{1}{2i}\left(e^{ix} - e^{-ix}\right).
 \end{equation*}
 
-In a similar way we get the following equation
+\noindent Similarly we get
+
+\begin{align}
+\label{eq: update rule, negative euler}
+	\sum_{j=0}^{k-1}\gamma^{l}\exp{\left(-2i\omega_0j\right)} &= \frac{1-\gamma^{k}\exp{\left(-2i\omega_0k\right)}}{1-\gamma \exp{\left(-2i\omega_0\right)}} \\
+	&= \frac{\left(1-\gamma^{k}\right) + 2\gamma^{k} \exp{\left(-i\omega_0k\right)}\sin\left(\omega_0 k\right)}{\left(1-\gamma\right) + 2\gamma \exp{\left(-i\omega_0\right)}\sin\left(\omega_0\right)}. 
+\end{align}
+
+We are now interested in the long-term behavior of the precision matrix $\messF{W}{X}{}$, i.e., in the special case where $k \rightarrow \infty$. We will call the resulting matrix $\overrightarrow{W}_{ss}$ steady state precision matrix. It is formally defined as follows
 
 \begin{equation*}
-	\sum_{j=0}^{k-1}\exp{\left(-2i\omega_0j\right)} = \exp{\left(-i\omega_0\left(k-1\right)\right)}\frac{\sin{\left(\omega_0k\right)}}{\sin{\left(\omega_0\right)}}.
+	 \overrightarrow{W}_{ss} := \underset{k \rightarrow \infty}{\lim}\left( \messF{W}{X}{} \right).
 \end{equation*}
 
-Thus the second term in equation (\ref{eq: update rule, orthogonal basis}) can be written as
+\noindent As $k$ tends to infinity, the second term of equation (\ref{eq: update rule, orthogonal basis}) simplifies to
+
+\begin{align}
+	\label{eq: second term}
+	&\underset{k \rightarrow \infty}{\lim} \mat{Q}\sum_{l=0}^{k-1}\left(\gamma^{l}
+		\begin{bmatrix}
+			0 & \exp{(2i\omega_0l)} \\
+			\exp{(-2i\omega_0l)} & 0
+		\end{bmatrix}
+		\right)\mat{Q}^H
+	\\
+	\nonumber
+	&= \frac{1}{\sqrt{2}}
+		\begin{bmatrix}
+			1 & 1\\
+			-i & i
+		\end{bmatrix}
+		\begin{bmatrix}
+			0 & \left(1-\gamma \exp{\left(2i\omega_0\right)}\right)^{-1} \\
+			\left(1-\gamma \exp{\left(-2i\omega_0\right)}\right)^{-1} & 0
+		\end{bmatrix}
+		\frac{1}{\sqrt{2}}
+		\begin{bmatrix}
+			1 & i \\
+			1 & -i
+		\end{bmatrix}
+	\\
+	\nonumber
+	&= \frac{1}{2}
+		\begin{bmatrix}
+			\left(1-\gamma \exp{\left(-2i\omega_0\right)}\right)^{-1} & \left(1-\gamma \exp{\left(2i\omega_0\right)}\right)^{-1} \\
+			i\left(1-\gamma \exp{\left(-2i\omega_0\right)}\right)^{-1} & -i\left(1-\gamma \exp{\left(2i\omega_0\right)}\right)^{-1}
+		\end{bmatrix}
+		\begin{bmatrix}
+			1 & i \\
+			1 & -i
+		\end{bmatrix}
+	\\
+	\nonumber
+	&= \frac{1}{2} \frac{1}{\left( 1-\gamma\exp(2i\omega_0) \right)  \left( 1-\gamma\exp(-2i\omega_0) \right)}\\
+	\nonumber
+	& \cdot
+		\begin{bmatrix}
+			2 - \gamma \left( \exp(2i\omega_0) + \exp(-2i\omega_0) \right) & -i \gamma \left( \exp(2i\omega_0) - \exp(-2i\omega_0) \right) \\
+			 -i \gamma \left( \exp(2i\omega_0) - \exp(-2i\omega_0) \right) & -2 + \gamma \left( \exp(2i\omega_0) + \exp(-2i\omega_0) \right)
+		\end{bmatrix}
+	\\
+	&= \frac{1}{2} \frac{1}{1+\gamma^2 - 2 \gamma \cos\left( 2\omega_0 \right)}
+		\begin{bmatrix}
+			2\left(1 - \gamma \cos\left( 2\omega_0 \right)\right) & 2 \gamma \sin\left( 2 \omega_0 \right) \\
+			 2 \gamma \sin\left( 2 \omega_0 \right) &- 2\left(1 - \gamma \cos\left( 2\omega_0 \right)\right)
+		\end{bmatrix} .
+\end{align}
+
+\noindent The steady state precision matrix is therefore given by
+
+\begin{equation*}
+	\overrightarrow{W}_{ss} = \frac{1}{2\sigma^2}\left(\frac{1}{1-\gamma}\mat{I}_2 + \frac{1}{1+\gamma^2 - 2 \gamma \cos\left( 2\omega_0 \right)}
+		\begin{bmatrix}
+			1 - \gamma \cos\left( 2\omega_0 \right)&  \gamma \sin\left( 2 \omega_0 \right) \\
+			  \gamma \sin\left( 2 \omega_0 \right) &- 1 + \gamma \cos\left( 2\omega_0 \right)
+		\end{bmatrix}\right) .
+\end{equation*}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%----------------------------------       Decay factor equal to 1      ---------------------------------%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section*{Decay factor $\gamma = 1$ }
+
+\noindent For the special case where $\gamma = 1$, equations (\ref{eq: update rule, positive euler}) and (\ref{eq: update rule, negative euler}) simplify to
+
+\begin{equation*}
+	\label{eq: update rule, geometric series}
+	\sum_{l=0}^{k-1}\exp{\left(2i\omega_0l\right)}= \exp{\left(i\omega_0(k-1)\right)}\frac{\sin\left(\omega_0 k\right)}{ \sin\left(\omega_0\right)} \\
+\end{equation*}
+
+\noindent and
+
+\begin{equation*}
+	\label{eq: update rule, geometric series}
+	\sum_{l=0}^{k-1}\exp{\left(2i\omega_0l\right)}= \exp{\left(-i\omega_0(k-1)\right)}\frac{\sin\left(\omega_0 k\right)}{ \sin\left(\omega_0\right)} \\
+\end{equation*}
+
+\noindent respectively. The identical calculation as in \ref{eq: second term} then yields
 
 \begin{align}
 	\nonumber
-	& \mat{Q}\sum_{j=0}^{k-1}\left(
+	& \mat{Q}\sum_{l=0}^{k-1}\left(
 		\begin{bmatrix}
-			0 & \exp{(2i\omega_0j)} \\
-			\exp{(-2i\omega_0j)} & 0
+			0 & \exp{(2i\omega_0l)} \\
+			\exp{(-2i\omega_0l)} & 0
 		\end{bmatrix}
 		\right)\mat{Q}^H
 	\\
@@ -519,22 +647,26 @@ Thus the second term in equation (\ref{eq: update rule, orthogonal basis}) can b
 \end{align}
 
 where $\mat{S} = \begin{bmatrix} 1 & 0 \\
-0 & -1 \end{bmatrix}$. Finally the precision matrix is now reduced to
+0 & -1 \end{bmatrix}$. The precision matrix is now reduced to
 
 \begin{equation*}
-	\messF{W}{X}{} = \frac{1}{2\sigma^2}\left(k\mat{I}_2 + \frac{\sin{\left(\omega_0k\right)}}{\sin{\left(\omega_0\right)}}\mat{A}^{k-1}\mat{S}\right)
+	\messF{W}{X}{} = \frac{1}{2\sigma^2}\left(k\mat{I}_2 + \frac{\sin{\left(\omega_0k\right)}}{\sin{\left(\omega_0\right)}}\mat{A}^{k-1}\mat{S}\right) .
 \end{equation*}
+
+As we can see $\messF{W}{X}{}$ will never end up in a steady state, i.e., for $k \rightarrow \infty$, the precision matrix will get bigger with linear divergence speed. The corresponding covariance matrix looks as follows
 
 \begin{align}
 	\messF{V}{X}{} &= \left(\messF{W}{X}{}\right)^{-1} \\
-	&= \frac{2\sigma^2}{k^2-\left(\frac{\sin{\left(\omega_0k\right)}}{\sin{\left(\omega_0\right)}}\right)^2}\left(k\mat{I}_2 - \frac{\sin{\left(\omega_0k\right)}}{\sin{\left(\omega_0\right)}}\mat{A}^{k-1}\mat{S}\right)
+	&= \frac{2\sigma^2}{k^2-\left(\frac{\sin{\left(\omega_0k\right)}}{\sin{\left(\omega_0\right)}}\right)^2}\left( k \mat{I}_2 - \frac{\sin{\left(\omega_0k\right)}}{\sin{\left(\omega_0\right)}}\mat{A}^{k-1}\mat{S}\right).
 \end{align}
+
+The Kalman gain is then defined as
 
 \begin{align}
 	\alpha_k &= \mat{CB}_k \\
 	&= \mat{C}\mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^TG \\
 	&= \mat{C}\mat{A}\messF{V}{X}{-1}\mat{A}^T\mat{C}^T\left( \sigma^2 + \mat{C} \mat{A}\messF{V}{X}{-1} \mat{A}^T\mat{C}^T \right)^{-1} \\
-	&= \frac{2\left(k-\frac{\sin{\left(\omega_0k\right)}}{\sin{\left(\omega_0\right)}}\cos{\left(\omega_0\left(k+1\right)\right)}\right)}{k^2-\left(\frac{\sin{\left(\omega_0k\right)}}{\sin{\left(\omega_0\right)}}\right)^2 + 2\left(k-\frac{\sin{\left(\omega_0k\right)}}{\sin{\left(\omega_0\right)}}\cos{\left(\omega_0\left(k+1\right)\right)}\right)}
+	&= \frac{2\left(k-\frac{\sin{\left(\omega_0k\right)}}{\sin{\left(\omega_0\right)}}\cos{\left(\omega_0\left(k+1\right)\right)}\right)}{k^2-\left(\frac{\sin{\left(\omega_0k\right)}}{\sin{\left(\omega_0\right)}}\right)^2 + 2\left(k-\frac{\sin{\left(\omega_0k\right)}}{\sin{\left(\omega_0\right)}}\cos{\left(\omega_0\left(k+1\right)\right)}\right)}.
 \end{align}
 
 \clearpage
