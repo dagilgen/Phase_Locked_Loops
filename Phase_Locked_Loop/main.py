@@ -13,7 +13,9 @@ from matplotlib import rc
 
 def main():
     # Parameters
-    useCompleteModel = False             # Choose the message passing model
+    useCompleteModel = False            # Choose the message passing model
+    abruptSigChange = False             # Abrupt signal change, impemented for only one harmonic
+    multHarmonics = True                # Multiple harmonics
     nOfSamples = 2000
     T_s = 1.0/1000                      # Sampling Period [s]
     f_W = 2                             # Fundamental frequency [Hz]
@@ -24,6 +26,7 @@ def main():
     variance = 2                        # Noise variance
     gamma = 0.999                       # Forgetting factor
     zeroThreshold = 1e-10               # Threshold below which numbers are treated as zero
+    harmonicLocked = 0
     
     print("Status:\n")
     
@@ -45,10 +48,20 @@ def main():
     
     # Initial values
     x_k = np.zeros((2*nOfFrequencies,1))
+    I2 = np.identity(2)
+    matrixList_F = [] 
     for i in range(0,nOfFrequencies):
         f = harmonicFrequencies[i]
         x_k[2*i,0] = amplitudes[i]*np.cos(phi[i])
         x_k[2*i+1,0] = amplitudes[i]*np.sin(phi[i])
+        
+        # Computaiton of F matrix
+        matrixList_F.append(I2)
+    
+   
+        
+#    print(matrixList_F)   
+#    print(np.transpose(matrixList_F))
     identity = np.identity(A.shape[0])    
     W_x = identity
     Wm_x = np.transpose(np.tile(np.array([[1,0]]),nOfFrequencies))
@@ -62,9 +75,11 @@ def main():
     startTime = time.time()
     for k in range(1,nOfSamples+1):
         x_k = np.dot(A, x_k)
-        #if k%1000==0 and k<1001:            # Uncomment to insert abrupt signal change
-        #    B = np.array([[-1,0],[0,1]])
-        #    x_k = np.dot(B, x_k)
+        if abruptSigChange == True:
+            if k%1000==0 and k<1001:            # Uncomment to insert abrupt signal change
+                B = np.array([[-1,0],[0,1]])
+                x_k = np.dot(B, x_k)
+            
         y_k = np.dot(C, x_k)
         y[k-1] = y_k
         z_k = variance*np.random.randn()    # Add white Gaussian noise
@@ -77,18 +92,52 @@ def main():
             [W_x, Wm_x] = msg.forwardMessagePassingComplete(A_inv, C, variance, y_tildek, W_x, Wm_x)
         else:
             [W_x, Wm_x] = msg.forwardMessagePassingSplit(A_inv, c, variance, y_tildek, W_x, Wm_x)
-        mean_k = np.linalg.solve(W_x, Wm_x)
+        #mean_k = np.linalg.solve(W_x, Wm_x)
+        
+        print(W_x)
+        print(Wm_x)
+        
+        # Apply glue factor
+        if multHarmonics == True:
+            matrixList_D = []
+            matrixList_E = []            
+            #I2 = np.zeros((2, 2))
+            #matrixList_E.append(I2)
+            if k == 1:
+                rotationalMatrix_inv = np.transpose(rotationalMatrix)
+                rotationalMatrix_inv_dotk = rotationalMatrix_inv
+            for i in range(0,nOfFrequencies):
+                f = harmonicFrequencies[i] 
+                #rotationalMatrix = np.array([[np.cos(f*omega),-np.sin(f*omega)],[np.sin(f*omega),np.cos(f*omega)]]) # Computation of D matrix
+                rotationalMatrix_inv = np.transpose(rotationalMatrix)
+                rotationalMatrix_inv_dotk = np.dot(rotationalMatrix_inv_dotk, rotationalMatrix_inv)
+                matrixList_D.append(rotationalMatrix_inv_dotk)
+                #phi_delta = harmonicFrequencies[harmonicLocked]*omega-f*omega # Computation of E matrix
+                phi_delta = phi[harmonicLocked] - phi[i] # Computation of E matrix
+                E_i = amplitudes[harmonicLocked]/amplitudes[i]*np.array([[np.cos(phi_delta),-np.sin(phi_delta)],[np.sin(phi_delta),np.cos(phi_delta)]])
+                matrixList_E.append(E_i)          
+                 
+            D = util.blockDiag(matrixList_D)
+            E = util.blockDiag(matrixList_E)
+            F = matrixList_F
+            
+            [W_tildex, Wm_tildex] = msg.applyGlueFactor(W_x, Wm_x, D, E, F)
+        else:
+            [W_tildex, Wm_tildex] = [W_x, Wm_x]
+        
+        mean_tildek = np.linalg.solve(W_tildex, Wm_tildex)
+        
         
         # Compute phases of harmonic sinusoids
         for i in range(0,nOfFrequencies):
-            alpha = 1/(np.sqrt(mean_k[2*i]**2+mean_k[2*i+1]**2))  # Scale mean value
-            cos_phase = np.arccos(alpha*mean_k[2*i])
-            sin_phase = np.arcsin(alpha*mean_k[2*i+1])
+            alpha = 1/(np.sqrt(mean_tildek[2*i]**2+mean_tildek[2*i+1]**2))  # Scale mean value
+            cos_phase = np.arccos(alpha*mean_tildek[2*i])
+            sin_phase = np.arcsin(alpha*mean_tildek[2*i+1])
             toggle = np.sign(sin_phase)
             phase[k-1,i] = cos_phase*toggle + (1-np.floor(np.abs(toggle)))*np.pi
         
-        W_x = W_x*gamma
-        Wm_x = Wm_x*gamma   
+        W_tildex = W_tildex*gamma
+        Wm_tildex = Wm_tildex*gamma   
         
     estimatedHarmonicSig = np.zeros(nOfSamples)
     for i in range(0,nOfFrequencies):

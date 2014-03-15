@@ -194,4 +194,45 @@ def steadyStatePrecisionMatrix(gamma, variance, omega):
     W_ss = (I/(1-gamma)+secondTerm)/(2*variance);
     
     return W_ss
+
+
+def applyGlueFactor(W_x, Wm_x, D, E, F):
+    '''Performs forward message passing for one iteration by using the
+    explicit formula for one step of the PLL factor graph. Uses the complete
+    factor graph as underlying factor graph model.
+    
+    Inputs:    
+    
+    A_inv : array-like
+        Inverse of the factor graph's state space matrix A
+    C : array-like
+        Output matrix for state-output mapping
+    variance : float
+        Variance of the white Gaussian noise applied on the output
+    y_tilde : float
+        Currently observed output value
+    W_x : array-like
+        Current forward message of inverse of the covariance matrix
+    Wm_x : array-like
+        Current forward message of the combined covaraince-mean message
+    
+    
+    Outputs:
+    
+    mean_tildek : array-like
+        New forward message of inverse of the covariance matrix
+    '''
+    
+    D_inv = np.transpose(D)
+    E_inv = np.linalg.inv(E)
+    DE_inv = np.dot(E_inv, D_inv)
+    Wm_tildexnew = np.dot(np.transpose(DE_inv), Wm_x)
+    W_tildexnew = np.dot(np.dot(np.transpose(DE_inv), W_x), DE_inv)
+    print(Wm_tildexnew)
+    print(W_tildexnew)
+    
+    Wm_xnew = util.diagonalSum(Wm_tildexnew)
+    W_xnew = util.diagonalSum(W_tildexnew)
+    
+    return [W_xnew, Wm_xnew]
     

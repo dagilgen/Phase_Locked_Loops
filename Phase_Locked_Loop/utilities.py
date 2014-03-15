@@ -7,13 +7,16 @@ Created on 28.02.2014
 import numpy as np
 
 
+"""
+Error Class. Used to raise errors.
+"""
 class Error(Exception):
-    """Error Class. Used to raise errors."""
     pass
 
 
 def colors(colorIndex):
-    """Returns the respective RGB color for a certain input number.
+    """
+    Returns the respective RGB color for a certain input number.
     
     Inputs:
     
@@ -53,9 +56,32 @@ def colors(colorIndex):
     
     return color
 
+def diagonalSum(M):
+    """
+    Returns the sum of all diagonal elements of a matrix.
+    
+    Inputs:
+    
+    M : int
+        Matrix with diagonal elements of interest.
+        
+        
+    Outputs:
+    
+    diogonalSum : int
+        The resulting diagonal sum.
+    """
+    diogonalSum = []
+    print(M)
+    for i in xrange(0, len(M)-1):
+        diogonalSum += M[i][i]
+    
+    #print(diogonalSum)
+    return diogonalSum
 
 def blockDiag(matrixList):
-    """Takes square matrices as input and constructs a block diagonal
+    """
+    Takes square matrices as input and constructs a block diagonal
     matrix in order of their appearance as input arguments.
     
     Inputs:
