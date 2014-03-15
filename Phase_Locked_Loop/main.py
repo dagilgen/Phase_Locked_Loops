@@ -18,25 +18,28 @@ def main():
     T_s = 1.0/1000                      # Sampling Period [s]
     f_W = 2                             # Fundamental frequency [Hz]
     omega = 2*np.pi*f_W*T_s
-    harmonicFrequencies = [1,2,3]           # Multiples of the fundamental frequency
+    harmonicFrequencies = [1,2,3]       # Multiples of the fundamental frequency
     amplitudes = [4,4,4]                # Amplitudes of harmonics
     phi = [0,np.pi/3,np.pi/2]           # Phase shifts of harmonics
     variance = 2                        # Noise variance
-    gamma = 0.999                       # Forgetting factor
+    gamma = 0.9995                      # Forgetting factor
     zeroThreshold = 1e-10               # Threshold below which numbers are treated as zero
     
     print("Status:\n")
     
     # Generation of the state space model matrices
     nOfFrequencies = len(harmonicFrequencies)
-    matrixList = []
+    systemMatrixList = []
+    precisionMatrixList = []
     c = np.array([[1,0]])
     C = np.tile(c,(1,nOfFrequencies))
     for i in range(0,nOfFrequencies):
         f = harmonicFrequencies[i]
         rotationalMatrix = np.array([[np.cos(f*omega),-np.sin(f*omega)],[np.sin(f*omega),np.cos(f*omega)]])
-        matrixList.append(rotationalMatrix)
-    A = util.blockDiag(matrixList)
+        W_ss = msg.steadyStatePrecisionMatrix(gamma, variance, f*omega)
+        systemMatrixList.append(rotationalMatrix)
+        precisionMatrixList.append(W_ss)
+    A = util.blockDiag(systemMatrixList)
     
     
     # Since A is orthogonal, the transpose of A is equal to its inverse
@@ -46,11 +49,9 @@ def main():
     # Initial values
     x_k = np.zeros((2*nOfFrequencies,1))
     for i in range(0,nOfFrequencies):
-        f = harmonicFrequencies[i]
         x_k[2*i,0] = amplitudes[i]*np.cos(phi[i])
-        x_k[2*i+1,0] = amplitudes[i]*np.sin(phi[i])
-    identity = np.identity(A.shape[0])    
-    W_x = identity
+        x_k[2*i+1,0] = amplitudes[i]*np.sin(phi[i]) 
+    W_x = util.blockDiag(precisionMatrixList)
     Wm_x = np.transpose(np.tile(np.array([[1,0]]),nOfFrequencies))
     y = np.zeros(nOfSamples)
     y_tilde = np.zeros(nOfSamples)
@@ -74,9 +75,11 @@ def main():
         
         # Apply the message passing algorithm with incorporated forgetting factor
         if useCompleteModel:
-            [W_x, Wm_x] = msg.forwardMessagePassingComplete(A_inv, C, variance, y_tildek, W_x, Wm_x)
+            #[W_x, Wm_x] = msg.forwardMessagePassingComplete(A_inv, C, variance, y_tildek, W_x, Wm_x)
+            Wm_x = msg.computeWeightedMeanComplete(A_inv, C, variance, y_tildek, Wm_x)
         else:
-            [W_x, Wm_x] = msg.forwardMessagePassingSplit(A_inv, c, variance, y_tildek, W_x, Wm_x)
+            #[W_x, Wm_x] = msg.forwardMessagePassingSplit(A_inv, c, variance, y_tildek, W_x, Wm_x)
+            Wm_x = msg.computeWeightedMeanSplit(A_inv, c, variance, y_tildek, Wm_x)
         mean_k = np.linalg.solve(W_x, Wm_x)
         
         # Compute phases of harmonic sinusoids
@@ -87,7 +90,7 @@ def main():
             toggle = np.sign(sin_phase)
             phase[k-1,i] = cos_phase*toggle + (1-np.floor(np.abs(toggle)))*np.pi
         
-        W_x = W_x*gamma
+        #W_x = W_x*gamma
         Wm_x = Wm_x*gamma   
         
     estimatedHarmonicSig = np.zeros(nOfSamples)

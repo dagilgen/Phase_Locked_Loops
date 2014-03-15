@@ -108,17 +108,17 @@ def forwardMessagePassingComplete(A_inv, C, variance, y_tilde, W_x, Wm_x):
     y_tilde : float
         Currently observed output value
     W_x : array-like
-        Current forward message of inverse of the covariance matrix
+        Current forward message of precision matrix
     Wm_x : array-like
-        Current forward message of the combined covaraince-mean message
+        Current forward message of weighted mean vector
     
     
     Outputs:
     
     W_xnew : array-like
-        New forward message of inverse of the covariance matrix
+        New forward message of precision matrix
     Wm_xnew : array-like
-        New forward message of the combined covariance-mean message
+        New forward message of weighted mean vector
     '''
     
     temp = np.dot(np.transpose(A_inv), W_x)
@@ -144,17 +144,17 @@ def forwardMessagePassingSplit(A_inv, c, variance, y_tilde, W_x, Wm_x):
     y_tilde : float
         Currently observed output value
     W_x : array-like
-        Current forward message of inverse of the covariance matrix
+        Current forward message of precision matrix
     Wm_x : array-like
-        Current forward message of the combined covariance-mean message
+        Current forward message of of weighted mean vector
     
     
     Outputs:
     
     W_xnew : array-like
-        New forward message of inverse of the covariance matrix
+        New forward message of precision matrix
     Wm_xnew : array-like
-        New forward message of the combined covariance-mean message
+        New forward message of weighted mean vector
     '''
     
     temp = np.dot(np.transpose(A_inv), W_x)
@@ -165,6 +165,68 @@ def forwardMessagePassingSplit(A_inv, c, variance, y_tilde, W_x, Wm_x):
     Wm_xnew = np.dot(np.transpose(A_inv), Wm_x) + np.dot(np.transpose(C), y_tilde)/variance
     
     return [W_xnew, Wm_xnew]
+
+
+def computeWeightedMeanComplete(A_inv, C, variance, y_tilde, Wm_x):
+    '''Computes only the weighted mean of the forward message passing
+    algorithm. Uses the split factor graph as underlying factor
+    graph model.
+    
+    Inputs:    
+    
+    A_inv : array-like
+        Inverse of the factor graph's state space matrix A
+    C : array-like
+        Output matrix for state-output mapping
+    variance : float
+        Variance of the white Gaussian noise applied on the output
+    y_tilde : float
+        Currently observed output value
+    Wm_x : array-like
+        Current forward message of weighted mean vector
+    
+    
+    Outputs:
+    
+    Wm_xnew : array-like
+        New forward message of weighted mean vector
+    '''
+    
+    Wm_xnew = np.dot(np.transpose(A_inv), Wm_x) + np.dot(np.transpose(C), y_tilde)/variance
+    
+    return Wm_xnew
+
+
+def computeWeightedMeanSplit(A_inv, c, variance, y_tilde, Wm_x):
+    '''Computes only the weighted mean of the forward message passing
+    algorithm. Uses the split factor graph as underlying factor
+    graph model.
+    
+    Inputs:    
+    
+    A_inv : array-like
+        Inverse of the factor graph's state space matrix A
+    c : array-like
+        Output matrix for one single state-output mapping
+    variance : float
+        Variance of the white Gaussian noise applied on the output
+    y_tilde : float
+        Currently observed output value
+    Wm_x : array-like
+        Current forward message of weighted mean vector
+    
+    
+    Outputs:
+    
+    Wm_xnew : array-like
+        New forward message of weighted mean vector
+    '''
+    
+    nOfFrequencies = A_inv.shape[1]/2
+    C = np.tile(c,(1,nOfFrequencies))
+    Wm_xnew = np.dot(np.transpose(A_inv), Wm_x) + np.dot(np.transpose(C), y_tilde)/variance
+    
+    return Wm_xnew
 
 
 def steadyStatePrecisionMatrix(gamma, variance, omega):
@@ -186,8 +248,10 @@ def steadyStatePrecisionMatrix(gamma, variance, omega):
     W_ss : array-like
         Steady state precision matrix
     '''
+    util.Error
+    if not(gamma < 1):
+            raise util.Error("Decay factor gamma must be smaller than 1.")
     
-
     angularMatrix = np.array([[1-gamma*np.cos(2*omega),gamma*np.sin(2*omega)],[gamma*np.sin(2*omega),-1+gamma*np.cos(2*omega)]]);
     secondTerm = angularMatrix/(1+gamma**2-2*gamma*np.cos(2*omega));
     I = np.identity(2) 
