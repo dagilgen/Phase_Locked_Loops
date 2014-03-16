@@ -228,11 +228,15 @@ def applyGlueFactor(W_x, Wm_x, D, E, F):
     DE_inv = np.dot(E_inv, D_inv)
     Wm_tildexnew = np.dot(np.transpose(DE_inv), Wm_x)
     W_tildexnew = np.dot(np.dot(np.transpose(DE_inv), W_x), DE_inv)
-    print(Wm_tildexnew)
-    print(W_tildexnew)
     
-    Wm_xnew = util.diagonalSum(Wm_tildexnew)
+    print(W_tildexnew)
+    print(Wm_tildexnew)  
+    
+    
     W_xnew = util.diagonalSum(W_tildexnew)
+    print(W_xnew)
+    Wm_xnew = util.diagonalSum(Wm_tildexnew)
+    print(Wm_xnew)
     
     return [W_xnew, Wm_xnew]
     
