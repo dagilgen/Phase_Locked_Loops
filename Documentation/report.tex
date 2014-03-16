@@ -55,6 +55,11 @@
 
 \renewcommand{\baselinestretch}{1.2}
 
+% Message passing commands
+\newcommand{\messF}[3]{\overrightarrow{#1}_{{#2}_{k{#3}}}}
+\newcommand{\messB}[3]{\overleftarrow{#1}_{{#2}_{k{#3}}}}
+\newcommand{\mat}[1]{\mathbf{#1}}
+
 % Here the document starts %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{document}
 
@@ -115,8 +120,8 @@
 
 % Table of contents
 \fancyhead[LO]{\scshape \contentsname}
-\fancyhead[RO]{\scshape Master's Thesis}
-\fancyhead[LE]{\scshape Master's Thesis}
+\fancyhead[RO]{\scshape Semester Thesis}
+\fancyhead[LE]{\scshape Semester Thesis}
 \fancyhead[RE]{\scshape \contentsname}
 \pdfbookmark{\contentsname}{contentsbookmarkname}
 \tableofcontents
@@ -146,20 +151,19 @@
 
 % Chapters %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Chapter 1: Principles of Phase-Locked Loops
-\chapter{Principles of Phase-Locked Loops}
+% Chapter 1: Introduction
+\include{./00_Introduction/Introduction}
+
+% Chapter 2: Principles of Phase-Locked Loops
 \include{./01_PrinciplesPLL/PrinciplesPLL}
 
-
-% Chapter 2: Tracking of a Sinusoidal Signal
-\chapter{Tracking of a Sinusoidal Signal}
+% Chapter 3: Tracking of a Sinusoidal Signal
 \include{./02_TrackingSinusoid/TrackingSinusoid}
 
-% Chapter 3: PLL for Harmonic Signals
-\chapter{PLL for Harmonic Signals}
+% Chapter 4: PLL for Harmonic Signals
 \include{./03_HarmonicSignals/HarmonicSignals}
 
-% Chapter 4: BlaBlaBla
+% Chapter 5: BlaBlaBla
 \chapter{BlaBlaBla}
 
 

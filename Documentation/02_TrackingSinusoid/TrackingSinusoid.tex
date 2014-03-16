@@ -1,6 +1,31 @@
 % Chapter 2: Tracking of a Sinusoidal Signal
-\section{Introduction}
+\chapter{Tracking of a Sinusoidal Signal}
 
-\section{Blabla}
+\section{Algorithm}
+
+In \ref{simpleForwardMessagePassing} we can see the most simple approach to construct a PLL with forward message passing.
+
+\begin{algorithm}
+\label{simpleForwardMessagePassing}
+\begin{algorithmic}[1]
+\Parameters $ A, C, n, \sigma^2$
+\Require $\{y_k\}_{k=1, \ldots, M}$
+\Ensure $\{\tilde{\phi}_k\}_{k=1,\ldots, M}$
+\State $k \gets 0$
+\State $\overrightarrow{W}_{X_0}\overrightarrow{m}_{X_0} \gets  0^{2n \times 1} $
+\State $\overrightarrow{W}_{X_0} \gets  10^{10} \cdot \texttt{identityMatrix}(2n) $
+
+\For{$k < M$}\Comment{Message passing algorithm}
+\State $\overrightarrow{W}_{X_{k+1}}\overrightarrow{m}_{X_{k+1}} \gets \texttt{updateMeanVector}(\overrightarrow{W}_{X_k}\overrightarrow{m}_{X_k},y_{k+1},A,C,\sigma^2)$
+\State $\overrightarrow{W}_{X_{k+1}} \gets \texttt{updatePrecisionMatrix}(\overrightarrow{W}_{X_k},A,C,\sigma^2)$
+\State $\tilde{\phi}_{k+1} \gets \texttt{estimateCurrentPhase}(\overrightarrow{W}_{X_{k+1}}\overrightarrow{m}_{X_{k+1}},\overrightarrow{W}_{X_{k+1}})$
+\State $k \gets k+1$
+\EndFor
+
+\State \textbf{return} $\{\tilde{\phi}_k\}_{k=1,\ldots, M}$
+\end{algorithmic}
+\caption[Simple PLL implementation.]
+{PLL implementation with forward message passing.}
+\end{algorithm}
 
 \clearpage

@@ -1,32 +1,100 @@
-% Chapter 1: Principles of Phase-Locked Loops
-\section{Introduction}
+% Chapter 2: Principles of Phase-Locked Loops
+\chapter{Mathematical Fundamentals of Phase-Locked Loops}
 
-\section{Algorithm}
+Here comes some introducing text.
 
-In \ref{simpleForwardMessagePassing} we can see the most simple approach to construct a PLL with forward message passing.
+% Section 2.1: 
+\section{Phase-Locked Loops}
 
-\begin{algorithm}
-\label{simpleForwardMessagePassing}
-\begin{algorithmic}[1]
-\Parameters $ A, C, n, \sigma^2$
-\Require $\{y_k\}_{k=1, \ldots, M}$
-\Ensure $\{\tilde{\phi}_k\}_{k=1,\ldots, M}$
-\State $k \gets 0$
-\State $\overrightarrow{W}_{X_0}\overrightarrow{m}_{X_0} \gets  0^{2n \times 1} $
-\State $\overrightarrow{W}_{X_0} \gets  10^{10} \cdot \texttt{identityMatrix}(2n) $
+% Subsection 2.1.1: 
+\subsection{General Purpose}
 
-\For{$k < M$}\Comment{Message passing algorithm}
-\State $\overrightarrow{W}_{X_{k+1}}\overrightarrow{m}_{X_{k+1}} \gets \texttt{updateMeanVector}(\overrightarrow{W}_{X_k}\overrightarrow{m}_{X_k},y_{k+1},A,C,\sigma^2)$
-\State $\overrightarrow{W}_{X_{k+1}} \gets \texttt{updatePrecisionMatrix}(\overrightarrow{W}_{X_k},A,C,\sigma^2)$
-\State $\tilde{\phi}_{k+1} \gets \texttt{estimateCurrentPhase}(\overrightarrow{W}_{X_{k+1}}\overrightarrow{m}_{X_{k+1}},\overrightarrow{W}_{X_{k+1}})$
-\State $k \gets k+1$
-\EndFor
+- Wozu braucht man Phase Locked Loops?
 
-\State \textbf{return} $\{\tilde{\phi}_k\}_{k=1,\ldots, M}$
-\end{algorithmic}
-\caption[Simple PLL implementation.]
-{PLL implementation with forward message passing.}
-\end{algorithm}
+\noindent - Wie werden sie technisch realisiert? -> Quellen angeben!
+
+\noindent - Zeige den Regelkreis auf -> Danach: Link zu Kalman Filtering.
+
+% Subsection 2.1.2: 
+\subsection{The Kalman View on Phase Locked Loops}
+
+- Wie funktioniert ein Kalman Filter im Allgemeinen? -> Und wieder: Quellen!
+
+\noindent - Wie sieht ein PLL mit Kalman Filter Implementierung aus? -> Block-Schaltbild
+
+\noindent - Verweise auf nächste Section und kündige an, dass nun die Theorie entwickelt wird, um einen PLL zu implementieren
+
+
+% Section 2.2: 
+\section{The Factor Graph Approach}
+
+% Subsection 2.2.1: 
+\subsection{Discrete State Space Model for Harmonic Signals}
+
+So far, we have investigated PLLs only conceptually without giving any insights into concrete mathematical details. We now do so by starting with the notion of \emph{harmonic signals}. The general representation of a harmonic signal $s(t)$ is the following \cite{somethingToCite}
+
+\begin{equation}
+\label{eq: harmonic signal raw}
+s(t) = \sum_{k=0}^N a_k \cos \left( 2 \pi f_k t + \varphi_k \right) .
+\end{equation}
+
+The lowest frequency $f_0$ is usually called the \emph{fundamental frequency} and the higher frequencies $f_k,\; k=1, \ldots, N$ are the \emph{upper harmonics} and are integer multiples of $f_0$, i.e.,
+
+\begin{equation*}
+\label{eq: upper harmonics}
+f_k = (k+1) f_0, \qquad k = 1, \ldots, N.
+\end{equation*}
+
+
+
+
+
+\noindent - Beginne mit continous time model der harmonischen Signale.
+
+\noindent - Verweise auf Nyquist Theorem und stelle fest, dass harmonische Signale ganz toll abgetastet werden können, wenn $f_s \geq 2f_g$, wobei $f_s$ die Abtastfrequenz ist und $f_g$ die höchste Frequenz im harmonischen Signal -> Noch was? Genau: QUELLEN!
+
+\noindent - Konstruiere anschliessend ein diskretes Model.
+
+\noindent - Erstelle nun das state space model.
+
+\noindent - Füge noise hinzu -> Danach: Link zum minimization problem
+
+
+% Subsection 2.2.2: 
+\subsection{The Phase-Locked Loop as a Minimization Problem}
+
+- Formuliere nun den PLL als minimization problem, d.h. erstelle die cost function
+
+\noindent - Erweitere die cost function um den decay factor
+
+\noindent - Forme das Ganze um, bis die cost function faktorisiert ist -> Danach: Link zu Solution via Gaussian Message Passing
+
+% Subsection 2.2.3: 
+\subsection{Solution via Gaussian Message Passing}
+
+- Zeichne den factor graph zu der betrachteten cost function -> Q-U-E-L-L-E-N!!!
+
+\noindent - Zeige auf, dass belief propagation, d.h. Max-product message passing das problem löst.
+
+\noindent - Führe Berechnungen durch und rechne $\messF{W}{X}{}$ und $\messF{W}{X}{}\messF{m}{X}{}$
+
+\noindent - Füge den Pseudocode hinzu
+
+\noindent - Erwähne kurz, dass man aus factor graphs interessante Eigenschaften herauslesen kann -> Danach: Link zu Properties of Gaussian Message Passing
+
+% Subsection 2.2.3:  
+\subsection{Properties of Gaussian Message Passing}
+
+- Füge explizite Formeln für die messages hinzu
+
+\noindent - Zeige, dass $\messF{m}{X}{}$ unabhängig ist vom noise
+
+\noindent - Berechne $\messF{V}{X}{}$ und $\messF{m}{X}{}$ und zeige ultimativ auf, dass Kalman filtering und factor graph ein und dasselbe sind -> Wie geil ist denn das?
+
+\noindent - Berechne steady state precision matrix und erwähne, dass dies nun computation power spart -> Herleitung oder die berühmt berüchtigen QUELLEN!
+
+
+
 
 
 
