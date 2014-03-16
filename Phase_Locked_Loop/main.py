@@ -88,7 +88,7 @@ def main():
         else:
             #[W_x, Wm_x] = msg.forwardMessagePassingSplit(A_inv, c, variance, y_tildek, W_x, Wm_x)
             Wm_x = msg.computeWeightedMeanSplit(A_inv, c, variance, y_tildek, Wm_x)
-        mean_k = np.linalg.solve(W_x, Wm_x)
+        #mean_k = np.linalg.solve(W_x, Wm_x)
         
         print(W_x)
         print(Wm_x)
