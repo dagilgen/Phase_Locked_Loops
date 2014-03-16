@@ -15,16 +15,16 @@ def main():
     # Parameters
     useCompleteModel = False            # Choose the message passing model
     abruptSigChange = False             # Abrupt signal change, impemented for only one harmonic
-    multHarmonics = True                # Multiple harmonics
+    multHarmonics = False                # Multiple harmonics
     nOfSamples = 2000
     T_s = 1.0/1000                      # Sampling Period [s]
     f_W = 2                             # Fundamental frequency [Hz]
     omega = 2*np.pi*f_W*T_s
-    harmonicFrequencies = [1,2,3]           # Multiples of the fundamental frequency
+    harmonicFrequencies = [1,2,3]       # Multiples of the fundamental frequency
     amplitudes = [4,4,4]                # Amplitudes of harmonics
     phi = [0,np.pi/3,np.pi/2]           # Phase shifts of harmonics
     variance = 2                        # Noise variance
-    gamma = 0.999                       # Forgetting factor
+    gamma = 0.9995                      # Forgetting factor
     zeroThreshold = 1e-10               # Threshold below which numbers are treated as zero
     harmonicLocked = 0
     
@@ -32,14 +32,17 @@ def main():
     
     # Generation of the state space model matrices
     nOfFrequencies = len(harmonicFrequencies)
-    matrixList = []
+    systemMatrixList = []
+    precisionMatrixList = []
     c = np.array([[1,0]])
     C = np.tile(c,(1,nOfFrequencies))
     for i in range(0,nOfFrequencies):
         f = harmonicFrequencies[i]
         rotationalMatrix = np.array([[np.cos(f*omega),-np.sin(f*omega)],[np.sin(f*omega),np.cos(f*omega)]])
-        matrixList.append(rotationalMatrix)
-    A = util.blockDiag(matrixList)
+        W_ss = msg.steadyStatePrecisionMatrix(gamma, variance, f*omega)
+        systemMatrixList.append(rotationalMatrix)
+        precisionMatrixList.append(W_ss)
+    A = util.blockDiag(systemMatrixList)
     
     
     # Since A is orthogonal, the transpose of A is equal to its inverse
@@ -51,19 +54,11 @@ def main():
     I2 = np.identity(2)
     matrixList_F = [] 
     for i in range(0,nOfFrequencies):
-        f = harmonicFrequencies[i]
         x_k[2*i,0] = amplitudes[i]*np.cos(phi[i])
-        x_k[2*i+1,0] = amplitudes[i]*np.sin(phi[i])
-        
+        x_k[2*i+1,0] = amplitudes[i]*np.sin(phi[i])      
         # Computaiton of F matrix
         matrixList_F.append(I2)
-    
-   
-        
-#    print(matrixList_F)   
-#    print(np.transpose(matrixList_F))
-    identity = np.identity(A.shape[0])    
-    W_x = identity
+    W_x = util.blockDiag(precisionMatrixList)
     Wm_x = np.transpose(np.tile(np.array([[1,0]]),nOfFrequencies))
     y = np.zeros(nOfSamples)
     y_tilde = np.zeros(nOfSamples)
@@ -78,21 +73,22 @@ def main():
         if abruptSigChange == True:
             if k%1000==0 and k<1001:            # Uncomment to insert abrupt signal change
                 B = np.array([[-1,0],[0,1]])
-                x_k = np.dot(B, x_k)
-            
+                x_k = np.dot(B, x_k)          
         y_k = np.dot(C, x_k)
         y[k-1] = y_k
         z_k = variance*np.random.randn()    # Add white Gaussian noise
         y_tildek = y_k+z_k
         y_tilde[k-1] = y_tildek
         
-        
+               
         # Apply the message passing algorithm with incorporated forgetting factor
         if useCompleteModel:
-            [W_x, Wm_x] = msg.forwardMessagePassingComplete(A_inv, C, variance, y_tildek, W_x, Wm_x)
+            #[W_x, Wm_x] = msg.forwardMessagePassingComplete(A_inv, C, variance, y_tildek, W_x, Wm_x)
+            Wm_x = msg.computeWeightedMeanComplete(A_inv, C, variance, y_tildek, Wm_x)
         else:
-            [W_x, Wm_x] = msg.forwardMessagePassingSplit(A_inv, c, variance, y_tildek, W_x, Wm_x)
-        #mean_k = np.linalg.solve(W_x, Wm_x)
+            #[W_x, Wm_x] = msg.forwardMessagePassingSplit(A_inv, c, variance, y_tildek, W_x, Wm_x)
+            Wm_x = msg.computeWeightedMeanSplit(A_inv, c, variance, y_tildek, Wm_x)
+        mean_k = np.linalg.solve(W_x, Wm_x)
         
         print(W_x)
         print(Wm_x)
@@ -136,7 +132,7 @@ def main():
             toggle = np.sign(sin_phase)
             phase[k-1,i] = cos_phase*toggle + (1-np.floor(np.abs(toggle)))*np.pi
         
-        W_tildex = W_tildex*gamma
+        #W_tildex = W_tildex*gamma
         Wm_tildex = Wm_tildex*gamma   
         
     estimatedHarmonicSig = np.zeros(nOfSamples)

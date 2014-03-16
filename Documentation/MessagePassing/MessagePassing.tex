@@ -60,20 +60,35 @@
 
 % Here the document starts
 \begin{document}
+\tableofcontents
+\setcounter{secnumdepth}{-1}	% Remove chapter and section numbering
+
+\newpage
 \pagestyle{plain}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%-------------------------------------       The Cost Function     ------------------------------------%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{The Cost Function}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%----------------------------------------       Update Rules     ---------------------------------------%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\chapter*{Derivation of Update Rules for Kalman-Based PLL}
-In Figure \ref{factor_graph} we can see a factor graph representation of a Kalman-based phase-locked loop. The matrices $A$, $C$ and the observed measurements $y_k$ are given as follows
+In this very first chapter, we derive the cost function for our PLL implementation. We will see, that the application of Gaussian message passing will come up very naturally, when it comes to minimizing this cost function. The system in which we try to track the phase can generally be described by an autonomus state space model
+
+\begin{align}
+\label{eq: state space model}
+\begin{split}
+	x_k &= \mat{A} x_{k-1}
+	\\
+	y_k &= \mat{C} x_k + Z_k.
+\end{split}
+\end{align}
+
+\noindent The system parameters $A$, $C$ and $Z_k$ are given by
 
 \begin{align*}
 	&\mat{A} = R(\omega_0) = 
 		\begin{bmatrix}
-			\cos{(\omega_0)} & -\sin{(\omega_0} \\
-			\sin{(\omega_0} & \cos{(\omega_0}
+			\cos(\omega_0) & -\sin(\omega_0) \\
+			\sin(\omega_0) & \cos(\omega_0)
 		\end{bmatrix},
 	\\
 	&\mat{C} = 
@@ -81,25 +96,148 @@ In Figure \ref{factor_graph} we can see a factor graph representation of a Kalma
 			1 & 0
 		\end{bmatrix},
 	\\
-	&Y_k = \cos({\omega_0k + \phi}) + Z_k, \qquad Z_k \overset{i.i.d}{\sim} \mathcal{N}\left(0, \sigma^2\right).
+	&Z_k \overset{i.i.d}{\sim} \mathcal{N}\left(0, \sigma^2\right).
 \end{align*}
 
-Since $Z_k$ is a Gaussian random variable it follows that all random variables in the factor graph are Gaussian. The states $X_k$ can therefore be described by its mean vector and covariance matrix.
+Now assume that at time $K$, we observed the outputs $y_1, y_2, \ldots, y_K$. With these measurements, we want to find estimates $\tilde{y}, \tilde{y}_2, \ldots, \tilde{y}_K$, that provide the best fit in terms of the squared error. Our cost function $e^2$ can therefore be described as follows
+
+\begin{equation}
+	\label{eq: cost function}
+	e^2 = \sum_{k=1}^K \left(y_k - \tilde{y}_k\right)^2.
+\end{equation}
+
+This cost function is reasonable, because $Z_k$ is modeled as white Gaussian noise. The estimates $\tilde{y}_k$ however, are subject to the physical laws imposed by the state space model in equation (\ref{eq: state space model}). Hence it is enough to compute the current state estimate denoted by $\hat{x}_K$. The estimated outputs are then given by
+
+\begin{equation}
+	\tilde{y}_k = \mat{C}\mat{A}^{-(K-k)} \tilde{x}_K.
+\end{equation}
+
+\noindent Using this relation in equation (\ref{eq: cost function}) yields
+
+\begin{equation*}
+	e^2\left( \tilde{x}_K \right) = \sum_{k=1}^K \left(y_k - \mat{C}\mat{A}^{-(K-k)} \tilde{x}_K\right)^2.
+\end{equation*}
+
+Note the dependence on $\tilde{x}_K$ only. We additionally introduce a so-called decay factor $\gamma$ that puts less weight on past measurements. It is defined more formally in the next chapter. The final cost function then has the form
+
+\begin{equation}
+	\label{eq: decay cost function}
+	e^2\left( \tilde{x}_K \right) = \sum_{k=1}^K  \gamma^{K-k} \left(y_k - \mat{C}\mat{A}^{-(K-k)} \tilde{x}_K\right)^2.
+\end{equation}
+
+If $\tilde{x}_K$ is optimal, equation (\ref{eq: decay cost function}) is minimal. Hence $\tilde{x}_K$ can be found by minimizing $e^2$
+
+\begin{align}
+	\nonumber
+	\tilde{x}_K &= \underset{x}{\arg\min} \left( \sum_{k=1}^K  \gamma^{K-k} \left(y_k - \mat{C}\mat{A}^{-(K-k)} x\right)^2 \right)\\
+	\nonumber
+	&= \underset{x}{\arg\max} \left( \prod_{k=1}^K  e^{-\gamma^{K-k} \left(y_k - \mat{C}\mat{A}^{-(K-k)} x\right)^2} \right)\\
+	\nonumber
+	&= \underset{x}{\arg\max} \left( \prod_{k=1}^K  e^{- \left(\sqrt{\gamma}^{K-k} y_k - \mat{C} \left(\sqrt{\gamma}\mat{A}\right)^{-(K-k)} x\right)^2} \right)\\
+	\label{eq: minimization problem}
+	&= \underset{x}{\arg\max} \left( \prod_{k=1}^K  e^{- \frac{z_k^2}{2\sigma^2}} \right),
+\end{align}
+
+\noindent where we used the noisy output relation of equation (\ref{eq: state space model}). On closer examination of equation (\ref{eq: minimization problem}), it turns out that our minimization problem can be formulated in terms of Gaussian sum-product message passing. The corresponding factor graph looks as depicted in Figure \ref{PLL_factor_graph}
 
 \begin{figure}[h]
 	\centering
 	\begin{tikzpicture}
-		\pllFactorGraph{0}{0}{1}{1}{k-1}{k}
+		\def\x{0}
+		\def\y{0}
+		\def\s{1}
+		\def\b{1}
+
+		\draw node[left] at (\x,\y+\s*4) {$\ldots$};
+		\rightArrow{\x}{\y+\s*4}{\s*1}{$X_{k-1}$}
+		\factorNode{\x+\s*1}{\y+\s*4-\b*0.5}{\b}{\b}{$\sqrt{\gamma} A$}
+		\rightArrow{\x+\s*1+\b}{\y+\s*4}{\s}{}
+		\factorNode{\x+\s*2+\b}{\y+\s*4-\b*0.5}{\b}{\b}{$=$}
+		\rightArrow{\x+\s*2+\b*2}{\y+\s*4}{\s}{$X_{k}$}
+		\draw node[right] at (\x+\s*3.25+\b*2,\y+\s*4) {$\ldots$};
+	
+		\downArrow{\x+\s*2+\b*1.5}{\y+\s*4-\b*0.5}{\s}{}
+		\factorNode{\x+\s*2+\b}{\y+\s*3-\b*1.5}{\b}{\b}{$C$}
+		\downArrow{\x+\s*2+\b*1.5}{\y+\s*3-\b*1.5}{\s}{$Y'_{k}$}
+		\factorNode{\x+\s*2+\b}{\y+\s*2-\b*2.5}{\b}{\b}{$+$}
+		\downArrow{\x+\s*2+\b*1.5}{\y+\s*2-\b*2.5}{\s}{}
+		\observable{\x+\s*2+\b*1.375}{\y+\s-\b*2.75}{\b*0.25}{\b*0.25}{$\sqrt{\gamma}^{K-k} y_{k}$}
+	
+		\factorNode{\x+\s*1}{\y+\s*2-\b*2.5}{\b}{\b}{}
+		\draw node[below] at (\x+\s*1+\b*0.5,\y+\s*2-\b*2.5) {$\mathcal{N}(0,\sigma^2)$};
+		\rightArrow{\x+\s*1+\b}{\y+\s*2-\b*2}{\s}{$Z_{k}$}
+	
+		\def\x{7}
+
+		\rightArrow{\x}{\y+\s*4}{\s*1}{$X_{K-1}$}
+		\factorNode{\x+\s*1}{\y+\s*4-\b*0.5}{\b}{\b}{$\sqrt{\gamma} A$}
+		\rightArrow{\x+\s*1+\b}{\y+\s*4}{\s}{}
+		\factorNode{\x+\s*2+\b}{\y+\s*4-\b*0.5}{\b}{\b}{$=$}
+		\rightArrow{\x+\s*2+\b*2}{\y+\s*4}{\s}{$X_{K}$}
+	
+		\downArrow{\x+\s*2+\b*1.5}{\y+\s*4-\b*0.5}{\s}{}
+		\factorNode{\x+\s*2+\b}{\y+\s*3-\b*1.5}{\b}{\b}{$C$}
+		\downArrow{\x+\s*2+\b*1.5}{\y+\s*3-\b*1.5}{\s}{$Y'_{K}$}
+		\factorNode{\x+\s*2+\b}{\y+\s*2-\b*2.5}{\b}{\b}{$+$}
+		\downArrow{\x+\s*2+\b*1.5}{\y+\s*2-\b*2.5}{\s}{}
+		\observable{\x+\s*2+\b*1.375}{\y+\s-\b*2.75}{\b*0.25}{\b*0.25}{$y_{K}$}
+	
+		\factorNode{\x+\s*1}{\y+\s*2-\b*2.5}{\b}{\b}{}
+		\draw node[below] at (\x+\s*1+\b*0.5,\y+\s*2-\b*2.5) {$\mathcal{N}(0,\sigma^2)$};
+		\rightArrow{\x+\s*1+\b}{\y+\s*2-\b*2}{\s}{$Z_{K}$}
 	\end{tikzpicture}
 
-  	\caption[Exemplary factor graph]
+  	\caption[Factor graph representation of minimization problem.]
+   	{Factor graph representation of minimization problem in equation \ref{eq: decay cost function}.}
+	\label{PLL_factor_graph}
+\end{figure}
+
+
+With forward message passing on this factor graph, we can find the estimate $\hat{x}_K$ at time $K$ that minimizes the squared error $e^2\left( \tilde{x}_K \right)$. Calculation of the involved forward messages is done in the next chapter.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%----------------------------------------       Update Rules     ---------------------------------------%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{Derivation of Update Rules for Kalman-Based PLL}
+
+In order to facilitate the computations, we set $\gamma=1$. It will be reintroduced later. In Figure \ref{factor_graph} we can see a factor graph representation of a Kalman-based phase-locked loop where $\gamma = 1$.
+
+\begin{figure}[h]
+	\centering
+	\begin{tikzpicture}
+		\def\x{0}
+		\def\y{0}
+		\def\s{1}
+		\def\b{1}
+
+		\draw node[left] at (\x,\y+\s*4) {$\ldots$};
+		\rightArrow{\x}{\y+\s*4}{\s*1}{$X_{k-1}$}
+		\factorNode{\x+\s*1}{\y+\s*4-\b*0.5}{\b}{\b}{$A$}
+		\rightArrow{\x+\s*1+\b}{\y+\s*4}{\s}{}
+		\factorNode{\x+\s*2+\b}{\y+\s*4-\b*0.5}{\b}{\b}{$=$}
+		\rightArrow{\x+\s*2+\b*2}{\y+\s*4}{\s}{$X_{k}$}
+		\draw node[right] at (\x+\s*3.25+\b*2,\y+\s*4) {$\ldots$};
+	
+		\downArrow{\x+\s*2+\b*1.5}{\y+\s*4-\b*0.5}{\s}{}
+		\factorNode{\x+\s*2+\b}{\y+\s*3-\b*1.5}{\b}{\b}{$C$}
+		\downArrow{\x+\s*2+\b*1.5}{\y+\s*3-\b*1.5}{\s}{$Y'_{k}$}
+		\factorNode{\x+\s*2+\b}{\y+\s*2-\b*2.5}{\b}{\b}{$+$}
+		\downArrow{\x+\s*2+\b*1.5}{\y+\s*2-\b*2.5}{\s}{}
+		\observable{\x+\s*2+\b*1.375}{\y+\s-\b*2.75}{\b*0.25}{\b*0.25}{$y_{k}$}
+
+		\factorNode{\x+\s*1}{\y+\s*2-\b*2.5}{\b}{\b}{}
+		\draw node[below] at (\x+\s*1+\b*0.5,\y+\s*2-\b*2.5) {$\mathcal{N}(0,\sigma^2)$};
+		\rightArrow{\x+\s*1+\b}{\y+\s*2-\b*2}{\s}{$Z_{k}$}
+	\end{tikzpicture}
+
+  	\caption[Factor graph representation of a Kalman filter's \textit{k}th cell.]
    	{Factor graph representation of a Kalman filter's \textit{k}th cell.}
 	\label{factor_graph}
 \end{figure}
 
-In every step $k$, a new sample $y_k$ is observed. Together with this sample and the previous state $X_{k-1}$, using Gaussian message passing, we can calculate the next state estimate $X_k$.
+Since $Z_k$ is a Gaussian random variable it follows that all random variables in the factor graph are Gaussian. As stated before, this gives rise to Gaussian message passing, i.e., all messages in the factor graph can be described by their mean vectors and covariance matrices.
 
-We begin the message passing algorithm by computing the message given by the observed samples $y_k$ \cite{SIP}
+We start the message passing algorithm by computing the message given by the observed samples $y_k$ \cite{SIP}
 
 \begin{align}
 	\label{eq: noise}
@@ -108,18 +246,18 @@ We begin the message passing algorithm by computing the message given by the obs
 	\messB{m}{Y}{} = y_k  \qquad &\messB{V}{Y}{} = 0.
 \end{align}
 
-In a next step, we add the noise in Eq. (\ref{eq: noise}) to the observed sample in Eq. (\ref{eq: sample}) to get the message at $Y_k$
+In a next step, we add the noise in Eq. (\ref{eq: noise}) to the observed sample in Eq. (\ref{eq: sample}) to get the message at $Y'_k$
 \begin{align}
 	\label{eq: noisy samples}
-	\messB{m}{Y}{} = y_k \qquad &\messB{V}{Y}{} =  \sigma^2.
+	\messB{m}{Y'}{} = y_k \qquad &\messB{V}{Y'}{} =  \sigma^2.
 \end{align}
 
 With these results, we can now compute the messages at the equality constraint
 \begin{align}
 	\label{eq: previous state}
-	\messF{m}{X''}{} = \mat{A}\messF{m}{X}{-1} \qquad &\messF{V}{X''}{} = \mat{A}\messF{V}{X}{-1}\mat{A}_T \\
+	\messF{m}{X''}{} = \mat{A}\messF{m}{X}{-1} \qquad &\messF{V}{X''}{} = \mat{A}\messF{V}{X}{-1}\mat{A}^T \\
 	\label{eq: input}
-	\messB{W}{X'}{} = \mat{C}^T\messB{W}{Y}{}\mat{C}  \qquad &\messB{W}{X'}{}\messB{m}{X'}{} = \mat{C}^T\messB{W}{Y}{}\messB{m}{Y}{},
+	\messB{W}{X'}{} = \mat{C}^T\messB{W}{Y'}{}\mat{C}  \qquad &\messB{W}{X'}{}\messB{m}{X'}{} = \mat{C}^T\messB{W}{Y'}{}\messB{m}{Y'}{},
 \end{align}
 
 where $\messB{W}{X'}{}$ denotes the precision matrix with the following equality
@@ -161,7 +299,7 @@ where the last step in the particular update equations follows from the fact tha
 	\mat{A}^T = \mat{A}^{-1}.
 \end{equation*}
 
-What is still missing with this implementation, is the ability of our estimator to react to abrupt signal changes, that are not modeled with our state space model. Such changes serve the purpose to physically transmit information with a waveform (e.g., Phase Shift Keying (PSK)). The ability is modeled with a so-called \emph{decay factor} $\gamma \in (0,1)$. In every iteration step $k$, $\messF{W}{X}{-1}$ is scaled with $\gamma$ which increases the uncertainty of  past estimates and therefore puts more emphasis on new measurements. The new update rules are then given by
+What is still missing in this implementation, is the ability of our estimator to react to abrupt signal changes, that are not modeled with our state space model. Such changes serve the purpose to physically transmit information with a waveform (e.g., Phase Shift Keying (PSK)). This adaptive ability is modeled with the \emph{decay factor} $\gamma \in (0,1)$ that we've already met in the previous chapter. In every iteration step $k$, $\messF{W}{X}{-1}$ is scaled with $\gamma$ which increases the uncertainty of  past estimates and therefore puts more emphasis on new measurements. The new update rules are then given by
 
 
 \begin{equation}
@@ -258,7 +396,7 @@ where we used the fact, that $G^{-1} = \gamma \sigma^2 + \mat{C} \mat{A}\messF{V
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %------------------------------       Amplitude and Phase Estimate     -----------------------------%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\chapter*{Amplitude and Phase Estimate and Cost Function}
+\chapter{Amplitude and Phase Estimate and Cost Function}
 The predicted signal estimate given the measurements ${y_1,...,y_{k-1}}$ can be written as
 
 \begin{equation*}
@@ -337,7 +475,7 @@ The cost function for the PLL then can be written as follows
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %-----------------------       Independence of state update from noise     ------------------------%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\chapter*{Independence of State Update from Noise}
+\chapter{Independence of State Update from Noise}
 
 The update rules in Equations (\ref{eq: decay precision matrix}) and (\ref{eq: decay weighted mean}) are still iterative methods to compute the precision matrix and the weighted mean vector. Equations (\ref{eq: explicit precision matrix}) and (\ref{eq: explicit weighted mean}) provide explicit formulas to compute the $\messF{W}{X}{}$ and $\messF{W}{X}{}\messF{m}{X}{}$ respectively
 
@@ -361,16 +499,18 @@ The equality of (\ref{eq: explicit precision matrix}) and (\ref{eq: decay precis
 \end{align}
 
 As we can see, the noise $\sigma^2$ cancels out in the calculation above, i.e. our estimator does not need any information about the Gaussian noise process.
+
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %------------------------------       Steady State Precision Matrix       -----------------------------%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\chapter*{Steady State Precision Matrix}
-
+\chapter{Steady State Precision Matrix}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %------------------------------------       Small decay factor      ------------------------------------%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section*{Decay factor $0<\gamma< 1$ }
+\section{ $1^{\text{st}}$ case: Decay factor $0<\gamma< 1$ }
 
 Since $\mat{A}$ is a rotation matrix it can be diagonalized in an orthonormal basis in $\mathcal{C}$ such that
 
@@ -583,7 +723,7 @@ We are now interested in the long-term behavior of the precision matrix $\messF{
 %----------------------------------       Decay factor equal to 1      ---------------------------------%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\section*{Decay factor $\gamma = 1$ }
+\section{ $2^{\text{nd}}$ case:  Decay factor $\gamma = 1$ }
 
 \noindent For the special case where $\gamma = 1$, equations (\ref{eq: update rule, positive euler}) and (\ref{eq: update rule, negative euler}) simplify to
 
@@ -653,7 +793,7 @@ where $\mat{S} = \begin{bmatrix} 1 & 0 \\
 	\messF{W}{X}{} = \frac{1}{2\sigma^2}\left(k\mat{I}_2 + \frac{\sin{\left(\omega_0k\right)}}{\sin{\left(\omega_0\right)}}\mat{A}^{k-1}\mat{S}\right) .
 \end{equation*}
 
-As we can see $\messF{W}{X}{}$ will never end up in a steady state, i.e., for $k \rightarrow \infty$, the precision matrix will get bigger with linear divergence speed. The corresponding covariance matrix looks as follows
+As we can see, $\messF{W}{X}{}$ will never end up in a steady state, i.e., for $k \rightarrow \infty$, the precision matrix will get bigger with linear divergence speed. The corresponding covariance matrix looks as follows
 
 \begin{align}
 	\messF{V}{X}{} &= \left(\messF{W}{X}{}\right)^{-1} \\
