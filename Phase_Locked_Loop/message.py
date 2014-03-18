@@ -260,7 +260,7 @@ def steadyStatePrecisionMatrix(gamma, variance, omega):
     return W_ss
 
 
-def applyGlueFactor(W_x, Wm_x, D, E, F):
+def applyGlueFactor(W_x, Wm_x, D, E):
     '''Performs forward message passing for one iteration by using the
     explicit formula for one step of the PLL factor graph. Uses the complete
     factor graph as underlying factor graph model.
@@ -290,17 +290,19 @@ def applyGlueFactor(W_x, Wm_x, D, E, F):
     D_inv = np.transpose(D)
     E_inv = np.linalg.inv(E)
     DE_inv = np.dot(E_inv, D_inv)
-    Wm_tildexnew = np.dot(np.transpose(DE_inv), Wm_x)
+    
     W_tildexnew = np.dot(np.dot(np.transpose(DE_inv), W_x), DE_inv)
+    Wm_tildexnew = np.dot(np.transpose(DE_inv), Wm_x)
+    #print(W_tildexnew)
     
-    print(W_tildexnew)
-    print(Wm_tildexnew)  
+    #print(Wm_tildexnew)  
     
-    
-    W_xnew = util.diagonalSum(W_tildexnew)
-    print(W_xnew)
-    Wm_xnew = util.diagonalSum(Wm_tildexnew)
-    print(Wm_xnew)
+    #W_xnew = util.diagonalSum(W_tildexnew)
+    W_xnew = W_tildexnew[0:2,0:2] + W_tildexnew[2:4,2:4] + W_tildexnew[4:6,4:6]
+    #print(W_xnew)
+    #Wm_xnew = util.diagonalSum(Wm_tildexnew)
+    Wm_xnew = Wm_tildexnew[0:2] + Wm_tildexnew[2:4] + Wm_tildexnew[4:6]
+    #print(Wm_xnew)
     
     return [W_xnew, Wm_xnew]
     
