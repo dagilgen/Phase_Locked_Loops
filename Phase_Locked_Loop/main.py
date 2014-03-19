@@ -15,7 +15,7 @@ def main():
     # Parameters
     useCompleteModel = False            # Choose the message passing model
     abruptSigChange = False             # Abrupt signal change, impemented for only one harmonic
-    multHarmonics = False                # Multiple harmonics
+    multHarmonics = True                # Multiple harmonics
     nOfSamples = 2000
     T_s = 1.0/1000                      # Sampling Period [s]
     f_W = 2                             # Fundamental frequency [Hz]
@@ -24,9 +24,9 @@ def main():
     amplitudes = [4,4,4]                # Amplitudes of harmonics
     phi = [0,np.pi/3,np.pi/2]           # Phase shifts of harmonics
     variance = 2                        # Noise variance
-    gamma = 0.9995                      # Forgetting factor
+    gamma = 0.995                      # Forgetting factor
     zeroThreshold = 1e-10               # Threshold below which numbers are treated as zero
-    harmonicLocked = 1
+    harmonicLocked = 0
     
     print("Status:\n")
     
@@ -62,6 +62,7 @@ def main():
     W_x = util.blockDiag(precisionMatrixList)
     Wm_x = np.transpose(np.tile(np.array([[1,0]]),nOfFrequencies))
     y = np.zeros(nOfSamples)
+    y_prime = np.zeros(nOfSamples)
     y_tilde = np.zeros(nOfSamples)
     phase = np.zeros((nOfSamples,nOfFrequencies))
     phaseLocked = np.zeros((nOfSamples,1))
@@ -78,9 +79,8 @@ def main():
                 B = np.array([[-1,0],[0,1]])
                 x_k = np.dot(B, x_k)
         if multHarmonics == True:        
-            y_k = np.dot(C_phaseLocked, x_k)
-        else:                            
-            y_k = np.dot(C, x_k)
+            y_prime[k-1] = np.dot(C_phaseLocked, x_k)                        
+        y_k = np.dot(C, x_k)
         y[k-1] = y_k
         z_k = variance*np.random.randn()    # Add white Gaussian noise
         y_tildek = y_k+z_k
@@ -116,9 +116,10 @@ def main():
                 rotationalMatrix_inv = np.transpose(rotationalMatrix)
                 if k == 1:
                     rotationalMatrix_inv_dotk[i] = rotationalMatrix_inv
-                rotationalMatrix_inv_dotk[i] = np.dot(rotationalMatrix_inv_dotk[i], rotationalMatrix_inv)
+                else:
+                    rotationalMatrix_inv_dotk[i] = np.dot(rotationalMatrix_inv_dotk[i], rotationalMatrix_inv)
                 matrixList_D.append(rotationalMatrix_inv_dotk[i])
-                phi_delta = phi[harmonicLocked] - phase[k-1, i]
+                phi_delta = phi[harmonicLocked] - phi[i]
 
                 #print(np.array([[np.cos(phi_delta),-np.sin(phi_delta)],[np.sin(phi_delta),np.cos(phi_delta)]]))
                 E_i = amplitudes[harmonicLocked]/amplitudes[i]*np.array([[np.cos(phi_delta),-np.sin(phi_delta)],[np.sin(phi_delta),np.cos(phi_delta)]])
@@ -138,7 +139,7 @@ def main():
             cos_phase = np.arccos(alpha*mean_tildek[0])
             sin_phase = np.arcsin(alpha*mean_tildek[1])
             toggle = np.sign(sin_phase)
-            phaseLocked[k-1] = cos_phase*toggle + (1-np.floor(np.abs(toggle)))*np.pi
+            phaseLocked[k-1] = -(cos_phase*toggle + (1-np.floor(np.abs(toggle)))*np.pi)
         #W_tildex = W_tildex*gamma
         Wm_x = Wm_x*gamma
         
@@ -146,7 +147,7 @@ def main():
     estimatedHarmonicSig = np.zeros(nOfSamples)
     if multHarmonics == True:
         #estimatedHarmonicSig = np.zeros(nOfSamples)
-        estimatedHarmonicSig = amplitudes[harmonicLocked]*np.cos(phase[:,harmonicLocked])
+        estimatedHarmonicSig = amplitudes[harmonicLocked]*np.cos(phaseLocked[:,0])
         stopTime = time.time()
         executionTime = (stopTime-startTime)
 #         for i in range(0,nOfFrequencies):
@@ -184,7 +185,7 @@ def main():
     
     py.subplot(2,2,3)
     if multHarmonics == True:
-        py.plot(samplingTime,phaseLocked[:,harmonicLocked],'x')       
+        py.plot(samplingTime,phaseLocked[:,0],'x')
     else:
         py.plot(samplingTime,phase[:,harmonicLocked],'x')
         
@@ -213,21 +214,37 @@ def main():
     
     
     # Error analysis  
-    rawPhase = (phi[harmonicLocked] + (omega*np.arange(1,nOfSamples+1)))%(2*np.pi)       # Calculate the phase error
+    rawPhase = (phi[harmonicLocked] + (harmonicFrequencies[harmonicLocked]*omega*np.arange(1,nOfSamples+1)))%(2*np.pi)       # Calculate the phase error
     toggle = np.floor((np.sign(np.sin(rawPhase)+zeroThreshold))*0.5)        # Eliminate rounding errors
     exactPhase = rawPhase + toggle*2*np.pi                                  # Shifts the phase into the interval
                                                                             # [-pi,pi] instead of [0,2pi]
     if multHarmonics == True:
-        absPhaseDifferenceBottom = np.abs((phaseLocked[:,harmonicLocked]-exactPhase))              # Absolute phase difference towards 0
-        absPhaseDifferenceTop = 2*np.pi-np.abs((phaseLocked[:,harmonicLocked]-exactPhase))         # Absolute phase difference towards 2*pi
+        absPhaseDifferenceBottom = np.abs((phaseLocked[:,0]-exactPhase))              # Absolute phase difference towards 0
+        absPhaseDifferenceTop = 2*np.pi-np.abs((phaseLocked[:,0]-exactPhase))         # Absolute phase difference towards 2*pi
     else:
         absPhaseDifferenceBottom = np.abs((phase[:,harmonicLocked]-exactPhase))              # Absolute phase difference towards 0
         absPhaseDifferenceTop = 2*np.pi-np.abs((phase[:,harmonicLocked]-exactPhase))         # Absolute phase difference towards 2*pi
     absPhaseDifference = np.minimum(absPhaseDifferenceBottom,absPhaseDifferenceTop)
     
+    py.figure(3)
+    
+    py.plot(samplingTime,exactPhase,color = 'r',linewidth = 1.5)
+    py.plot(samplingTime,phase[:,harmonicLocked],color = 'b',linewidth = 1.5)
+    py.plot(samplingTime,phaseLocked[:,0],color = 'g',linewidth = 1.5)
+    
+    py.figure(4)
+    
+    py.plot(samplingTime,estimatedHarmonicSig,color = 'r',linewidth = 1.5)
+    py.plot(samplingTime,y,color = 'b',linewidth = 1.5)
+    py.plot(samplingTime,y_prime,color = 'g',linewidth = 1.5)
+    
     squaredPhaseError = ((np.abs(absPhaseDifference)%(2*np.pi)))**2
     
-    error = estimatedHarmonicSig - y
+    py.figure(2)
+    if multHarmonics == True:
+        error = estimatedHarmonicSig - y_prime
+    else:
+        error = estimatedHarmonicSig - y
     maxError = np.max(np.abs(error))
     RMSError = np.sqrt(np.sum(error**2)/nOfSamples)
     print("Error analysis")
