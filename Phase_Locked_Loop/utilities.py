@@ -56,27 +56,38 @@ def colors(colorIndex):
     
     return color
 
-def diagonalSum(M):
+
+def glueFactorSum(message):
     """
-    Returns the sum of all diagonal elements of a matrix.
+    Merges the messages after the glue factor process
     
     Inputs:
     
-    M : int
-        Matrix with diagonal elements of interest.
+    message : array_like
+        Gaussian message, whose parts have to be summed up
         
         
     Outputs:
     
-    diogonalSum : int
-        The resulting diagonal sum.
+    mergedMessage : array_like
+        Sum of messages after the glue factor process
     """
-    diogonalSum = []
-    print(M)
-    diogonalSum = M[0:2,0:2] + M[2:4,2:4] + M[4:6,4:6]
     
-    #print(diogonalSum)
-    return diogonalSum
+    nOfRows = message.shape[0]
+    nOfColumns = message.shape[1]
+    nOfMerges = nOfRows/2
+    
+    # Sum the correct parts of the message via a summation matrix
+    identityMatrix = np.identity(2, int)
+    sumMatrix = np.tile(identityMatrix,(1,nOfMerges))
+    mergedMessage = np.dot(sumMatrix,message)
+    
+    # If the message is a matrix, we have to apply the sumMatrix once more
+    if nOfColumns > 1:
+        mergedMessage = np.dot(mergedMessage,np.transpose(sumMatrix))
+    
+    return mergedMessage
+
 
 def blockDiag(matrixList):
     """
@@ -114,6 +125,27 @@ def blockDiag(matrixList):
     return blockMatrix
 
 
+def rotMat(omega):
+    """
+    Creates a rotational matrix with rotation parameter omega
+    
+    Inputs:
+    
+    omega : float
+        Rotation parameter of rotation matrix
+        
+        
+    Outputs:
+    
+    rotationalMatrix : array_like
+        Resulting rotational matrix
+    """
+    
+    rotationalMatrix = np.array([[np.cos(omega),-np.sin(omega)],[np.sin(omega),np.cos(omega)]])
+        
+    return rotationalMatrix
+
+
 def phaseEstimator(phases,omegas,T_s,k):
     """
     !!DRAFT!! Estimates the phase shifts !!DRAFT!!
@@ -130,7 +162,6 @@ def phaseEstimator(phases,omegas,T_s,k):
     estimatedPhase = phaseShifts + estimatedTime*omegas
     
     return estimatedPhase
-
 
 
 def phaseEstimator2(phases,omegas,T_s,k):

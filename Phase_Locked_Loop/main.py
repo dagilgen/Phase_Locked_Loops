@@ -14,8 +14,8 @@ from matplotlib import rc
 def main():
     # Parameters
     useCompleteModel = False            # Choose the message passing model
-    abruptSigChange = False             # Abrupt signal change, impemented for only one harmonic
     multHarmonics = True                # Multiple harmonics
+    phaseJump = 0                       # If phaseJump is nonzero, the phase of all harmonics changes abruptly
     nOfSamples = 2000
     T_s = 1.0/1000                      # Sampling Period [s]
     f_W = 2                             # Fundamental frequency [Hz]
@@ -24,7 +24,7 @@ def main():
     amplitudes = [4,4,4]                # Amplitudes of harmonics
     phi = [0,np.pi/3,np.pi/2]           # Phase shifts of harmonics
     variance = 2                        # Noise variance
-    gamma = 0.995                      # Forgetting factor
+    gamma = 0.9995                      # Forgetting factor
     zeroThreshold = 1e-10               # Threshold below which numbers are treated as zero
     harmonicLocked = 0
     
@@ -36,13 +36,12 @@ def main():
     precisionMatrixList = []
     c = np.array([[1,0]])
     C = np.tile(c,(1,nOfFrequencies))
-    #C_phaseLocked = np.array([[1,0,0,0,0,0]])
-    C_phaseLocked = np.array([np.zeros(6, int)])
+    C_phaseLocked = np.array([np.zeros(2*nOfFrequencies, int)])
     C_phaseLocked[0][harmonicLocked*2] = 1
 
     for i in range(0,nOfFrequencies):
         f = harmonicFrequencies[i]
-        rotationalMatrix = np.array([[np.cos(f*omega),-np.sin(f*omega)],[np.sin(f*omega),np.cos(f*omega)]])
+        rotationalMatrix = util.rotMat(f*omega)
         W_ss = msg.steadyStatePrecisionMatrix(gamma, variance, f*omega)
         systemMatrixList.append(rotationalMatrix)
         precisionMatrixList.append(W_ss)
@@ -54,6 +53,7 @@ def main():
     
     
     # Initial values
+    x = np.zeros((2*nOfFrequencies,nOfSamples))
     x_k = np.zeros((2*nOfFrequencies,1))
     for i in range(0,nOfFrequencies):
         x_k[2*i,0] = amplitudes[i]*np.cos(phi[i])
@@ -66,19 +66,22 @@ def main():
     y_tilde = np.zeros(nOfSamples)
     phase = np.zeros((nOfSamples,nOfFrequencies))
     phaseLocked = np.zeros((nOfSamples,1))
-    #print(phase_1d)
+    
+    
     # Solving the PLL problem iteratively via factor graphs
     samplingTime = T_s*np.arange(1,nOfSamples+1)
     startTime = time.time()
-    rotationalMatrix_inv_dotk = np.zeros((3,2,2))
+    identity = np.identity(2)
+    rotationalMatrix_inv_dotk = np.tile(identity, (nOfFrequencies,1,1))
 
     for k in range(1,nOfSamples+1):
         x_k = np.dot(A, x_k)
-        if abruptSigChange == True:
-            if k%1000==0 and k<1001:            # Uncomment to insert abrupt signal change
-                B = np.array([[-1,0],[0,1]])
-                x_k = np.dot(B, x_k)
-        if multHarmonics == True:        
+        if phaseJump != 0 and k%(nOfSamples/2)== 0 and k<(nOfSamples/2)+1:
+            abruptRotation = util.rotMat(phaseJump)
+            jumpMatrix = util.blockDiag(nOfFrequencies*[abruptRotation])
+            x_k = np.dot(jumpMatrix, x_k)
+        x[:,k-1:k] = x_k
+        if multHarmonics:        
             y_prime[k-1] = np.dot(C_phaseLocked, x_k)                        
         y_k = np.dot(C, x_k)
         y[k-1] = y_k
@@ -88,7 +91,7 @@ def main():
          
         
         # Apply the message passing algorithm with incorporated forgetting factor
-        if useCompleteModel == True:
+        if useCompleteModel:
             #[W_x, Wm_x] = msg.forwardMessagePassingComplete(A_inv, C, variance, y_tildek, W_x, Wm_x)
             Wm_x = msg.computeWeightedMeanComplete(A_inv, C, variance, y_tildek, Wm_x)
         else:
@@ -107,45 +110,42 @@ def main():
 
 
         # Apply glue factor
-        if multHarmonics == True:
+        if multHarmonics:
             matrixList_D = []
             matrixList_E = []
             for i in range(0,nOfFrequencies):                          
                 f = harmonicFrequencies[i]
-                rotationalMatrix = np.array([[np.cos(f*omega),-np.sin(f*omega)],[np.sin(f*omega),np.cos(f*omega)]])
-                rotationalMatrix_inv = np.transpose(rotationalMatrix)
-                if k == 1:
-                    rotationalMatrix_inv_dotk[i] = rotationalMatrix_inv
-                else:
-                    rotationalMatrix_inv_dotk[i] = np.dot(rotationalMatrix_inv_dotk[i], rotationalMatrix_inv)
+                rotationalMatrix_inv = np.transpose(util.rotMat(f*omega))
+                rotationalMatrix_inv_dotk[i] = np.dot(rotationalMatrix_inv_dotk[i], rotationalMatrix_inv)
                 matrixList_D.append(rotationalMatrix_inv_dotk[i])
+                
                 phi_delta = phi[harmonicLocked] - phi[i]
-
-                #print(np.array([[np.cos(phi_delta),-np.sin(phi_delta)],[np.sin(phi_delta),np.cos(phi_delta)]]))
-                E_i = amplitudes[harmonicLocked]/amplitudes[i]*np.array([[np.cos(phi_delta),-np.sin(phi_delta)],[np.sin(phi_delta),np.cos(phi_delta)]])
-                #print(E_i)
+                E_i = amplitudes[harmonicLocked]/amplitudes[i]*util.rotMat(phi_delta)
                 matrixList_E.append(E_i)          
-                 
-                 
+                
             D = util.blockDiag(matrixList_D)
-            #print(D)
             E = util.blockDiag(matrixList_E)
             
             [W_tildex, Wm_tildex] = msg.applyGlueFactor(W_x, Wm_x, D, E)
             mean_tildek = np.linalg.solve(W_tildex, Wm_tildex)
             
-    
+            
+            # Turn the phases back to the state at time k
+            mean_tildek = np.dot(np.transpose(matrixList_D[harmonicLocked]),mean_tildek)
+            
+            
+            # Compute phase of locked phase
             alpha = 1/(np.sqrt(mean_tildek[0]**2+mean_tildek[1]**2))  # Scale mean value
             cos_phase = np.arccos(alpha*mean_tildek[0])
             sin_phase = np.arcsin(alpha*mean_tildek[1])
             toggle = np.sign(sin_phase)
-            phaseLocked[k-1] = -(cos_phase*toggle + (1-np.floor(np.abs(toggle)))*np.pi)
+            phaseLocked[k-1] = cos_phase*toggle + (1-np.floor(np.abs(toggle)))*np.pi
         #W_tildex = W_tildex*gamma
         Wm_x = Wm_x*gamma
         
         
     estimatedHarmonicSig = np.zeros(nOfSamples)
-    if multHarmonics == True:
+    if multHarmonics:
         #estimatedHarmonicSig = np.zeros(nOfSamples)
         estimatedHarmonicSig = amplitudes[harmonicLocked]*np.cos(phaseLocked[:,0])
         stopTime = time.time()
@@ -184,7 +184,7 @@ def main():
     py.ylabel('Amplitude $A$')
     
     py.subplot(2,2,3)
-    if multHarmonics == True:
+    if multHarmonics:
         py.plot(samplingTime,phaseLocked[:,0],'x')
     else:
         py.plot(samplingTime,phase[:,harmonicLocked],'x')
@@ -204,8 +204,9 @@ def main():
     py.figure(2)
     
     py.subplot(3,1,1)
+    py.axhline(color = 'k',linewidth = 1)
     for i in range(0,nOfFrequencies):
-        harmonic = amplitudes[i]*np.cos(2*np.pi*samplingTime*harmonicFrequencies[i]*f_W+phi[i])
+        harmonic = np.transpose(np.dot(c,x[2*i:2*i+2,:]))
         py.plot(samplingTime,harmonic,color=util.colors(i),linewidth = 1.5)
     py.plot(samplingTime,y,color = 'k',linewidth = 2.5)
     py.title('Reference input signal and corresponding harmonics')
@@ -218,7 +219,7 @@ def main():
     toggle = np.floor((np.sign(np.sin(rawPhase)+zeroThreshold))*0.5)        # Eliminate rounding errors
     exactPhase = rawPhase + toggle*2*np.pi                                  # Shifts the phase into the interval
                                                                             # [-pi,pi] instead of [0,2pi]
-    if multHarmonics == True:
+    if multHarmonics:
         absPhaseDifferenceBottom = np.abs((phaseLocked[:,0]-exactPhase))              # Absolute phase difference towards 0
         absPhaseDifferenceTop = 2*np.pi-np.abs((phaseLocked[:,0]-exactPhase))         # Absolute phase difference towards 2*pi
     else:
@@ -241,7 +242,7 @@ def main():
     squaredPhaseError = ((np.abs(absPhaseDifference)%(2*np.pi)))**2
     
     py.figure(2)
-    if multHarmonics == True:
+    if multHarmonics:
         error = estimatedHarmonicSig - y_prime
     else:
         error = estimatedHarmonicSig - y

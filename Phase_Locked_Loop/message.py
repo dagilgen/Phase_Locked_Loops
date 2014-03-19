@@ -248,7 +248,6 @@ def steadyStatePrecisionMatrix(gamma, variance, omega):
     W_ss : array-like
         Steady state precision matrix
     '''
-    util.Error
     if not(gamma < 1):
             raise util.Error("Decay factor gamma must be smaller than 1.")
     
@@ -261,30 +260,28 @@ def steadyStatePrecisionMatrix(gamma, variance, omega):
 
 
 def applyGlueFactor(W_x, Wm_x, D, E):
-    '''Performs forward message passing for one iteration by using the
-    explicit formula for one step of the PLL factor graph. Uses the complete
-    factor graph as underlying factor graph model.
+    '''This function uses the glue factor approach to retreive more
+    precise measurements from Gaussian message passing with multiple
+    harmonics.
     
     Inputs:    
     
-    A_inv : array-like
-        Inverse of the factor graph's state space matrix A
-    C : array-like
-        Output matrix for state-output mapping
-    variance : float
-        Variance of the white Gaussian noise applied on the output
-    y_tilde : float
-        Currently observed output value
     W_x : array-like
-        Current forward message of inverse of the covariance matrix
+        Current forward message of precision matrix
     Wm_x : array-like
-        Current forward message of the combined covaraince-mean message
+        Current forward message of of weighted mean vector
+    D : array-like
+        Backward rotation matrix
+    E : array-like
+        Phase shift matrix
     
     
     Outputs:
     
-    mean_tildek : array-like
-        New forward message of inverse of the covariance matrix
+    W_xnew : array-like
+        New forward message of precision matrix
+    Wm_xnew : array-like
+        New forward message of weighted mean vector
     '''
     
     D_inv = np.transpose(D)
@@ -293,16 +290,9 @@ def applyGlueFactor(W_x, Wm_x, D, E):
     
     W_tildexnew = np.dot(np.dot(np.transpose(DE_inv), W_x), DE_inv)
     Wm_tildexnew = np.dot(np.transpose(DE_inv), Wm_x)
-    #print(W_tildexnew)
     
-    #print(Wm_tildexnew)  
-    
-    #W_xnew = util.diagonalSum(W_tildexnew)
-    W_xnew = W_tildexnew[0:2,0:2] + W_tildexnew[2:4,2:4] + W_tildexnew[4:6,4:6]
-    #print(W_xnew)
-    #Wm_xnew = util.diagonalSum(Wm_tildexnew)
-    Wm_xnew = Wm_tildexnew[0:2] + Wm_tildexnew[2:4] + Wm_tildexnew[4:6]
-    #print(Wm_xnew)
+    W_xnew = util.glueFactorSum(W_tildexnew)
+    Wm_xnew = util.glueFactorSum(Wm_tildexnew)
     
     return [W_xnew, Wm_xnew]
     
