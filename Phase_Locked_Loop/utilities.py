@@ -73,9 +73,7 @@ def diagonalSum(M):
     """
     diogonalSum = []
     print(M)
-    for i in xrange(0, M.shape[0]):
-        diogonalSum += M[i][i]
-        print(i)
+    diogonalSum = M[0:2,0:2] + M[2:4,2:4] + M[4:6,4:6]
     
     #print(diogonalSum)
     return diogonalSum
