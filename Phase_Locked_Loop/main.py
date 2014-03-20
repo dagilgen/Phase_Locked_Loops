@@ -15,18 +15,21 @@ def main():
     # Parameters
     useCompleteModel = False            # Choose the message passing model
     multHarmonics = True                # Multiple harmonics
+    inputFundamental = True
+    harmonicLocked = 0                  # Choose which harmonic do you want to track
     phaseJump = 0                       # If phaseJump is nonzero, the phase of all harmonics changes abruptly
+    
     nOfSamples = 2000
     T_s = 1.0/1000                      # Sampling Period [s]
     f_W = 2                             # Fundamental frequency [Hz]
     omega = 2*np.pi*f_W*T_s
-    harmonicFrequencies = [1,2,3]       # Multiples of the fundamental frequency
-    amplitudes = [4,4,4]                # Amplitudes of harmonics
-    phi = [0,np.pi/3,np.pi/2]           # Phase shifts of harmonics
+    harmonicFrequencies = [1,2,3,4]       # Multiples of the fundamental frequency
+    amplitudes = [4,3,4,2]                # Amplitudes of harmonics
+    phi = [0,np.pi/3,np.pi/2,np.pi/5]           # Phase shifts of harmonics
     variance = 2                        # Noise variance
     gamma = 0.9995                      # Forgetting factor
     zeroThreshold = 1e-10               # Threshold below which numbers are treated as zero
-    harmonicLocked = 0
+    
     
     print("Status:\n")
     
@@ -66,7 +69,7 @@ def main():
     y_tilde = np.zeros(nOfSamples)
     phase = np.zeros((nOfSamples,nOfFrequencies))
     phaseLocked = np.zeros((nOfSamples,1))
-    
+    estimatedHarmonicSig = np.zeros(nOfSamples)
     
     # Solving the PLL problem iteratively via factor graphs
     samplingTime = T_s*np.arange(1,nOfSamples+1)
@@ -144,16 +147,11 @@ def main():
         Wm_x = Wm_x*gamma
         
         
-    estimatedHarmonicSig = np.zeros(nOfSamples)
+    
     if multHarmonics:
-        #estimatedHarmonicSig = np.zeros(nOfSamples)
         estimatedHarmonicSig = amplitudes[harmonicLocked]*np.cos(phaseLocked[:,0])
         stopTime = time.time()
         executionTime = (stopTime-startTime)
-#         for i in range(0,nOfFrequencies):
-#             estimatedHarmonicSig += amplitudes[i]*np.cos(phase[:,i])
-#             stopTime = time.time()
-#             executionTime = (stopTime-startTime)
     else:
         for i in range(0,nOfFrequencies):
             estimatedHarmonicSig += amplitudes[i]*np.cos(phase[:,i])
@@ -167,9 +165,12 @@ def main():
     rc('text',usetex=True)
     rc('font',**{'family':'serif','serif':['Computer Modern']})
     
-    
+
     # Plot estimation results
     py.figure(1)
+    py.subplots_adjust(left=None, bottom=None, right=None, top=None,    # Adjustment of subplots
+                wspace=0.3, hspace=0.3)
+#    py.tight_layout
     
     py.subplot(2,2,1)
     py.plot(samplingTime,y)
@@ -201,7 +202,9 @@ def main():
     
     
     # Plot the harmonics and the resulting signal
-    py.figure(2)
+    py.figure(2)  
+    py.subplots_adjust(left=None, bottom=None, right=None, top=None,    # Adjustment of subplots
+                wspace=0.7, hspace=0.7)
     
     py.subplot(3,1,1)
     py.axhline(color = 'k',linewidth = 1)
@@ -226,19 +229,7 @@ def main():
         absPhaseDifferenceBottom = np.abs((phase[:,harmonicLocked]-exactPhase))              # Absolute phase difference towards 0
         absPhaseDifferenceTop = 2*np.pi-np.abs((phase[:,harmonicLocked]-exactPhase))         # Absolute phase difference towards 2*pi
     absPhaseDifference = np.minimum(absPhaseDifferenceBottom,absPhaseDifferenceTop)
-    
-    py.figure(3)
-    
-    py.plot(samplingTime,exactPhase,color = 'r',linewidth = 1.5)
-    py.plot(samplingTime,phase[:,harmonicLocked],color = 'b',linewidth = 1.5)
-    py.plot(samplingTime,phaseLocked[:,0],color = 'g',linewidth = 1.5)
-    
-    py.figure(4)
-    
-    py.plot(samplingTime,estimatedHarmonicSig,color = 'r',linewidth = 1.5)
-    py.plot(samplingTime,y,color = 'b',linewidth = 1.5)
-    py.plot(samplingTime,y_prime,color = 'g',linewidth = 1.5)
-    
+        
     squaredPhaseError = ((np.abs(absPhaseDifference)%(2*np.pi)))**2
     
     py.figure(2)
@@ -263,6 +254,27 @@ def main():
     py.subplot(3,1,3)
     py.axhline(color = 'k',linewidth = 1)
     py.plot(samplingTime,squaredPhaseError,color = 'r',linewidth = 1.5)
+    py.title('Squared fundamental phase error $|\hat{\phi}-\phi|^2$')
+    py.xlabel('Time $t$ $[s]$')
+    py.ylabel('Error $E$')
+    
+    # Additional plot
+    py.figure(3)
+    py.subplots_adjust(left=None, bottom=None, right=None, top=None,    # Adjustment of subplots
+                wspace=0.7, hspace=0.7)
+    
+    py.subplot(2,1,1)
+    py.plot(samplingTime,exactPhase,color = 'r',linewidth = 1.5)
+    py.plot(samplingTime,phase[:,harmonicLocked],color = 'b',linewidth = 1.5)
+    py.plot(samplingTime,phaseLocked[:,0],color = 'g',linewidth = 1.5)
+    py.title('Phase')
+    py.xlabel('Time $t$ $[s]$')
+    py.ylabel('Phase')
+    
+    py.subplot(2,1,2)
+    py.plot(samplingTime,estimatedHarmonicSig,color = 'r',linewidth = 1.5)
+    py.plot(samplingTime,y,color = 'b',linewidth = 1.5)
+    py.plot(samplingTime,y_prime,color = 'g',linewidth = 1.5)
     py.title('Squared fundamental phase error $|\hat{\phi}-\phi|^2$')
     py.xlabel('Time $t$ $[s]$')
     py.ylabel('Error $E$')
